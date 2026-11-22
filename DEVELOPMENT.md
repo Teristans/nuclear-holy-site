@@ -161,6 +161,8 @@ python install.py                    # 装进 Mods，自动 sha256 复核
 | `lua_check.py` 报找不到 DLL | `CIV6_DIR` 未设 / 指错 | 设 `CIV6_DIR`，或 `python lua_check.py --game-bin "<...>\Base\Binaries\Win64Steam"` |
 | 新增 SQL 文件后校验条数没涨 | `SQL_FILES` 两处硬编码漏加 | 见 §6 第 2 条 |
 | 人口涨了科研反而掉了 | 宜居度掉档（Civ6 固有机制），不是本层 bug | 查宜居度，不要动 `nhs_18` |
+| `git push` 报 `CRYPT_E_NO_REVOCATION_CHECK` | 走代理时 schannel 拿不到证书吊销列表（代理做了 TLS 中间人） | `git config http.sslVerify false`（**只对本仓库生效**；这是网络环境的妥协，不是常规做法。换到直连网络后建议改回 `true`） |
+| `git clone` 报 `Repository not found` 但仓库确实存在 | 私有库 + 未登录 | `git config credential.helper manager` 后重新 clone，按弹窗登录 |
 
 ---
 
