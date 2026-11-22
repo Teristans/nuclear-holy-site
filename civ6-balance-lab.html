@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文明6 数值平衡实验室 · Balance Lab</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --ink:#1f2937; --ink2:#5b6472;
+    --line:#e3e6ea; --brand:#2c5282; --brand2:#3b6ea5; --gold:#b8860b;
+    --red:#c0392b; --green:#237a4b; --chip:#eef2f7; --warn:#fff7e6; --warnline:#f0c36d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  header{background:linear-gradient(120deg,#24405f,#2c5282 55%,#3b6ea5);color:#fff;padding:22px 30px}
+  header h1{margin:0;font-size:22px;letter-spacing:.5px}
+  header p{margin:6px 0 0;color:#d7e2ef;font-size:13px}
+  .badge{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:2px 12px;font-size:12px;margin-bottom:8px}
+  .wrap{max-width:1180px;margin:22px auto;padding:0 18px}
+  nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  nav button{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 16px;cursor:pointer;color:var(--ink2);font-size:13px;font-weight:600}
+  nav button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .panel{display:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;box-shadow:0 2px 10px rgba(20,40,70,.05)}
+  .panel.on{display:block}
+  h2{margin:0 0 4px;font-size:18px;color:var(--brand)}
+  .sub{color:var(--ink2);font-size:13px;margin:0 0 20px}
+  h3{margin:22px 0 10px;font-size:15px;color:var(--ink);border-left:3px solid var(--gold);padding-left:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;color:var(--ink2);font-weight:600}
+  .field input[type=number],select{border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:14px;background:#fff;color:var(--ink)}
+  .field input[type=range]{width:100%;accent-color:var(--brand)}
+  .row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+  .out{background:var(--chip);border-radius:10px;padding:16px 18px;margin-top:16px}
+  .out .big{font-size:26px;font-weight:700;color:var(--brand)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:12px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px}
+  .stat .k{font-size:11px;color:var(--ink2)}
+  .stat .v{font-size:20px;font-weight:700;margin-top:2px}
+  .red{color:var(--red)} .green{color:var(--green)} .gold{color:var(--gold)}
+  table{border-collapse:collapse;width:100%;margin-top:12px;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+  th{background:var(--chip);color:var(--ink2);font-weight:600}
+  td input{border:1px solid transparent;background:transparent;width:80px;padding:3px 5px;border-radius:5px;font-size:13px}
+  td input:hover,td input:focus{border-color:var(--brand);background:#fff;outline:none}
+  svg{width:100%;height:auto;display:block}
+  .axis{stroke:var(--line);stroke-width:1}
+  .gridline{stroke:#eef1f4;stroke-width:1}
+  .note{background:var(--warn);border:1px solid var(--warnline);border-radius:8px;padding:12px 14px;font-size:13px;color:#7a5a12;margin:14px 0}
+  .ok{background:#eef8f1;border-color:#a8d5ba;color:var(--green)}
+  code{background:#eef2f7;padding:1px 6px;border-radius:5px;font-family:Consolas,monospace;color:#8a3b12}
+  .tag{display:inline-block;background:var(--chip);border-radius:5px;padding:1px 7px;font-size:11px;color:var(--ink2);margin-left:6px}
+  .foot{color:var(--ink2);font-size:12px;margin-top:20px;text-align:center}
+  ul{padding-left:20px} li{margin:6px 0}
+  .eq{background:#f8fafc;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:6px;padding:10px 14px;margin:8px 0;font-family:Consolas,monospace;font-size:13px;color:#24405f}
+</style>
+</head>
+<body>
+<header>
+  <span class="badge">游戏数值平衡专家 · 交付物</span>
+  <h1>文明6 数值平衡实验室</h1>
+  <p>口径已核对 · 参数可调 · 实时重算 · 含敏感性分析与平衡验证说明　|　基准：标准速度</p>
+</header>
+
+<div class="wrap">
+  <nav>
+    <button class="on" data-p="combat">⚔ 战斗模拟器</button>
+    <button data-p="econ">🌾 人口与经济</button>
+    <button data-p="params">🎛 全局参数表</button>
+    <button data-p="verify">✔ 平衡验证说明</button>
+  </nav>
+
+  <!-- 战斗 -->
+  <section class="panel on" id="combat">
+    <h2>战斗伤害模拟器</h2>
+    <p class="sub">拖动战力差，观察伤害如何指数级放大——这就是文明6“雪球效应”的数学根源。</p>
+
+    <div class="grid">
+      <div class="field"><label>攻击方战力（含加成后）</label><input type="number" id="aStr" value="46"></div>
+      <div class="field"><label>防守方战力（含加成后）</label><input type="number" id="dStr" value="34"></div>
+      <div class="field"><label>攻击类型</label>
+        <select id="atype"><option value="melee">近战（会吃反击）</option><option value="ranged">远程（无反击）</option><option value="siege">攻城器</option></select>
+      </div>
+      <div class="field"><label>目标是否有城墙/区域防御</label>
+        <select id="wall"><option value="0">无城墙</option><option value="1">有城墙</option></select>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:14px"><label>战力差滑块：<b id="diffLbl">+12</b></label>
+      <input type="range" id="diff" min="-30" max="45" value="12"></div>
+
+    <div class="out">
+      <div>单次攻击伤害区间 <span class="tag" id="atypeTag">近战</span></div>
+      <div class="big" id="dmgRange">—</div>
+      <div class="stats">
+        <div class="stat"><div class="k">期望伤害</div><div class="v" id="dmgMid">—</div></div>
+        <div class="stat"><div class="k">伤害倍率（vs 等战力）</div><div class="v" id="dmgMul">—</div></div>
+        <div class="stat"><div class="k">一击必杀判定</div><div class="v" id="ohko">—</div></div>
+        <div class="stat"><div class="k">100HP 目标所需攻击次数</div><div class="v" id="hits">—</div></div>
+      </div>
+    </div>
+
+    <h3>连续交战模拟（含伤兵战力衰减 + 近战反击）</h3>
+    <div class="row">
+      <div class="field"><label>攻方满血战力</label><input type="number" id="simA" value="46"></div>
+      <div class="field"><label>守方满血战力</label><input type="number" id="simD" value="34"></div>
+      <div class="field"><label>攻方初始HP</label><input type="number" id="simAH" value="100"></div>
+      <div class="field"><label>守方初始HP</label><input type="number" id="simDH" value="100"></div>
+      <button onclick="runSim()" style="background:var(--brand);color:#fff;border:0;border-radius:7px;padding:10px 18px;cursor:pointer;font-weight:600">▶ 开打</button>
+    </div>
+    <div id="simOut" class="out" style="display:none"></div>
+
+    <h3>敏感性分析：战力差 → 期望伤害</h3>
+    <svg id="dmgChart" viewBox="0 0 900 320"></svg>
+    <div class="note">读图要点：曲线是指数而非直线。战力差 0 时期望 30；每 +1 战力差伤害 ×1.041；<b>+25 左右即可一击秒杀满血单位</b>。这条曲线决定了“滚雪球”为什么在文明6里如此难逆转。</div>
+  </section>
+
+  <!-- 人口经济 -->
+  <section class="panel" id="econ">
+    <h2>人口增长与经济模型</h2>
+    <p class="sub">人口是文明6最核心的产出乘数。这里核对增长曲线、住房惩罚与扩地成本口径。</p>
+
+    <h3>人口增长所需粮食 F(n) = 15 + 8(n−1) + (n−1)^1.5</h3>
+    <div class="row">
+      <div class="field"><label>当前人口 n</label><input type="number" id="pop" value="4" min="1"></div>
+      <div class="field"><label>每回合粮食盈余（扣除2粮/人后）</label><input type="number" id="surplus" value="4" step="0.5"></div>
+      <div class="field"><label>住房数</label><input type="number" id="housing" value="6"></div>
+    </div>
+    <div class="out">
+      <div class="stats">
+        <div class="stat"><div class="k">升到下一人口需粮</div><div class="v" id="needFood">—</div></div>
+        <div class="stat"><div class="k">住房增长系数</div><div class="v" id="houseFactor">—</div></div>
+        <div class="stat"><div class="k">预计增长回合</div><div class="v" id="growTurns">—</div></div>
+        <div class="stat"><div class="k">粮食总消耗（2/人）</div><div class="v" id="foodUse">—</div></div>
+      </div>
+    </div>
+    <table id="popTable"><thead><tr><th>人口 n</th><th>需粮 F(n)</th><th>较上一级增量</th></tr></thead><tbody></tbody></table>
+
+    <h3>文化扩地成本 P(n) = 10 + [6(n−1)]^1.3</h3>
+    <svg id="cultureChart" viewBox="0 0 900 260"></svg>
+
+    <h3>购买 / 升级费用口径</h3>
+    <table>
+      <tr><th>项目</th><th>公式</th><th>示例输入</th><th>结果</th></tr>
+      <tr><td>金币买单位/建筑</td><td><code>4 × 产能锤数</code></td><td>锤数 <input type="number" id="buyProd" value="40"></td><td id="buyGoldOut">—</td></tr>
+      <tr><td>信仰买单位/建筑</td><td><code>2 × 产能锤数</code></td><td>（同上）</td><td id="buyFaithOut">—</td></tr>
+      <tr><td>金币买伟人</td><td><code>200 + 15 × 剩余伟人点</code></td><td>剩余点 <input type="number" id="gpLeft" value="20"></td><td id="gpGoldOut">—</td></tr>
+      <tr><td>单位升级</td><td><code>max(15, 向5取整(10 + 产能差×1.5))</code></td><td>产能差 <input type="number" id="upDiff" value="20"></td><td id="upOut">—</td></tr>
+    </table>
+  </section>
+
+  <!-- 参数表 -->
+  <section class="panel" id="params">
+    <h2>全局参数表（可调）</h2>
+    <p class="sub">这些值直接驱动上面所有计算——想调数值平衡，改这里，然后回战斗/经济页看结果。改完自动保存提示会出现。</p>
+    <table>
+      <thead><tr><th>参数（对应 GlobalParameters.xml 口径）</th><th>当前值</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>战斗伤害基数 B</td><td><input type="number" id="p_base" step="1"></td><td>等战力时期望伤害，默认 30</td></tr>
+        <tr><td>指数系数 k</td><td><input type="number" id="p_k" step="0.005"></td><td>伤害 = B·e^(k·战力差)，默认 0.04</td></tr>
+        <tr><td>随机浮动下限</td><td><input type="number" id="p_lo" step="0.05"></td><td>默认 0.8（=24/30）</td></tr>
+        <tr><td>随机浮动上限</td><td><input type="number" id="p_hi" step="0.05"></td><td>默认 1.2（=36/30）</td></tr>
+        <tr><td>近战攻城系数</td><td><input type="number" id="p_m" step="0.05"></td><td>默认 0.15</td></tr>
+        <tr><td>远程攻城系数</td><td><input type="number" id="p_r" step="0.05"></td><td>默认 0.50</td></tr>
+        <tr><td>攻城器攻城系数</td><td><input type="number" id="p_s" step="0.05"></td><td>默认 1.00</td></tr>
+        <tr><td>伤兵战力惩罚斜率</td><td><input type="number" id="p_w" step="1"></td><td>战力惩罚 = round(p_w − HP/10)，默认 10</td></tr>
+      </tbody>
+    </table>
+    <div class="note" id="saveNote">参数已加载为官方口径默认值。修改后所有页面的计算会实时更新。</div>
+    <button onclick="resetParams()" style="background:#fff;border:1px solid var(--line);border-radius:7px;padding:8px 14px;cursor:pointer">↺ 恢复默认口径</button>
+  </section>
+
+  <!-- 验证说明 -->
+  <section class="panel" id="verify">
+    <h2>平衡验证说明</h2>
+    <p class="sub">不是给你一堆公式就完事——下面是这套数值体系的关键循环、极端路径与边界条件。</p>
+
+    <h3>一、计算口径核对（已查证）</h3>
+    <div class="eq">伤害 = (24~36) × e^(战力差 × 0.04) × 攻城系数</div>
+    <div class="eq">伤兵惩罚战力 = round(10 − 当前HP/10)</div>
+    <div class="eq">人口增长需粮 F(n) = 15 + 8(n−1) + (n−1)^1.5</div>
+    <div class="eq">文化扩地 P(n) = 10 + [6(n−1)]^1.3</div>
+    <p>来源交叉验证：Civilization Fandom Wiki（Combat / Population）、civ6wiki.info、游民星空《产能消耗·费用计算等公式总结》、GlobalParameters.xml 字段。浮动区间各来源记为 0.8~1.2 或 0.75~1.25，本工具采用 <b>0.8~1.2</b>（对应 24~36）。</p>
+
+    <h3>二、关键循环</h3>
+    <ul>
+      <li><b>战力→伤害→减员→战力下降</b>：受伤单位每掉10HP扣1战力（最多−9），导致越打越弱、被滚雪球。这是战斗系统的正反馈核心，也是“集火残血”收益极高的原因。</li>
+      <li><b>粮食→人口→产出→扩张</b>：人口每+1消耗2粮，同时提供0.7科技/0.3文化（GS为0.5科技）。盈余粮推动增长，住房(−2~+1)是软闸门。</li>
+      <li><b>文化→扩地→地块→粮锤</b>：扩地成本按 n^1.3 增长，越往后越贵，逼迫玩家用金币买地或早期抢地。</li>
+    </ul>
+
+    <h3>三、极端路径（调参时重点盯这些）</h3>
+    <ul>
+      <li><b>一击必杀阈值</b>：战力差 +26~35 可能秒杀，+36 必秒。若把指数系数 k 调高，这个阈值会显著提前，战斗变得极其“一锤定音”。</li>
+      <li><b>跨时代碾压</b>：只认战力差不认绝对值——30vs20 与 110vs100 结果完全相同。这意味着单城爆兵能靠质量穿数量，但也意味着科技领先带来的小幅战力优势永不过时。</li>
+      <li><b>住房卡死</b>：人口超过住房 5+ 时增长归零。若调低粮食产出，前期容易陷入“卡住房又卡粮”的死局。</li>
+      <li><b>伟人通货膨胀</b>：金币买伟人 = 200+15×剩余点，剩余点越多越贵；越到后期伟人点竞争激烈，价格飙升，是经济系统天然的节流阀。</li>
+    </ul>
+
+    <h3>四、调参红线（平衡性建议）</h3>
+    <ul>
+      <li>伤害基数 B 建议 <b>26~34</b> 之间微调：低于26战斗拖沓，高于34则防守方几乎无法反击。</li>
+      <li>指数系数 k 是全系统最敏感参数，<b>不要超过 0.05</b>，否则 +20 战力差就能秒人，战术深度归零。</li>
+      <li>浮动区间收窄会让战斗结果可预测（降低随机性），变化 <b>±0.05</b> 即可明显改变手感。</li>
+      <li>任何改动都应跑一遍“等战力/差10/差25/差36”四个锚点，确认伤害倍率曲线没有断层。</li>
+    </ul>
+    <div class="note ok">✔ 验证清单：口径已交叉核对 · 关键循环已建模 · 极端路径已标定 · 调参红线已给出。把要调整的具体数值目标告诉我（例如“想让长枪兵能扛住骑士一波”），我可以据此反推需要的战力/加成参数。</div>
+  </section>
+
+  <div class="foot">游戏数值平衡专家 · 文明6数值工具台　|　所有参数为默认官方口径，改动仅在你本地生效</div>
+</div>
+
+<script>
+/* ---------- 参数 ---------- */
+const DEF={base:30,k:0.04,lo:0.8,hi:1.2,m:0.15,r:0.5,s:1.0,w:10};
+let P={...DEF};
+try{const s=localStorage.getItem('civ6P');if(s)P={...DEF,...JSON.parse(s)}}catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=(x,n=1)=>Number(x).toFixed(n);
+
+/* ---------- 导航 ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');$(b.dataset.p).classList.add('on');
+});
+
+/* ---------- 核心公式 ---------- */
+function dmgRange(atk,def,siege){
+  const diff=atk-def;
+  const factor=Math.exp(P.k*diff)*siege;
+  return {lo:P.base*P.lo*factor,hi:P.base*P.hi*factor,mid:P.base*((P.lo+P.hi)/2)*factor,diff};
+}
+function woundedPenalty(hp){return Math.round(P.w-hp/10)}
+function effStr(base,hp){return Math.max(0,base-woundedPenalty(hp))}
+
+/* ---------- 战斗页 ---------- */
+function siegeCoef(){
+  const wall=$('wall').value==='1';
+  if(!wall)return 1;
+  return {melee:P.m,ranged:P.r,siege:P.s}[$('atype').value];
+}
+function renderCombat(){
+  const a=+$('aStr').value,d=+$('dStr').value;
+  $('diff').value=Math.max(-30,Math.min(45,a-d));
+  $('diffLbl').textContent=(a-d>=0?'+':'')+(a-d);
+  const sc=siegeCoef();const R=dmgRange(a,d,sc);
+  $('atypeTag').textContent={melee:'近战',ranged:'远程',siege:'攻城器'}[$('atype').value]+($('wall').value==='1'?' · 打城墙':'');
+  $('dmgRange').innerHTML=`<span class="red">${fmt(R.lo)}</span> ~ <span class="red">${fmt(R.hi)}</span> HP`;
+  $('dmgMid').textContent=fmt(R.mid);
+  $('dmgMul').textContent='×'+fmt(R.mid/P.base,2);
+  const ohko=R.lo>=100?'必秒':(R.mid>=100?'很可能':(R.hi>=100?'可能':'否'));
+  $('ohko').innerHTML=`<span class="${R.mid>=100?'green':''}">${ohko}</span>`;
+  $('hits').textContent=R.mid>0?Math.ceil(100/R.mid)+' 次':'∞';
+  drawDmgChart();
+}
+['aStr','dStr','atype','wall'].forEach(id=>$(id).addEventListener('input',renderCombat));
+$('diff').addEventListener('input',()=>{$('aStr').value=+$('dStr').value+ +$('diff').value;renderCombat()});
+
+function runSim(){
+  let a=+$('simA').value,d=+$('simD').value,ah=+$('simAH').value,dh=+$('simDH').value;
+  const type=$('atype').value,sc=siegeCoef();let t=0;const log=[];
+  while(ah>0&&dh>0&&t<40){
+    const aE=effStr(a,ah),dE=effStr(d,dh);
+    const dmg=dmgRange(aE,dE,sc).mid;dh-=dmg;
+    let back=0;
+    if(type==='melee'&&dh>0){back=dmgRange(dE,aE,1).mid;ah-=back}
+    log.push({t:t+1,aE,dE,dmg,back,ah:Math.max(0,ah),dh:Math.max(0,dh)});t++;
+  }
+  const win=dh<=0?'攻方获胜':(ah<=0?'守方获胜':'40回合未分胜负');
+  let html=`<div style="font-size:18px;font-weight:700;color:var(--brand)">${win} · 历时 ${t} 回合</div>`;
+  html+='<table><thead><tr><th>回合</th><th>攻方有效战力</th><th>守方有效战力</th><th>攻方造成伤害</th><th>反击伤害</th><th>攻方HP</th><th>守方HP</th></tr></thead><tbody>';
+  log.forEach(r=>{html+=`<tr><td>${r.t}</td><td>${fmt(r.aE)}</td><td>${fmt(r.dE)}</td><td class="red">${fmt(r.dmg)}</td><td>${fmt(r.back)}</td><td>${fmt(r.ah)}</td><td>${fmt(r.dh)}</td></tr>`});
+  html+='</tbody></table>';
+  $('simOut').style.display='block';$('simOut').innerHTML=html;
+}
+
+/* ---------- 图表 ---------- */
+function lineChart(svgId,xs,ys,xLabel,yLabel,refX){
+  const svg=$(svgId),W=900,H=svgId==='dmgChart'?320:260,L=60,R=20,T=24,B=44;
+  const iw=W-L-R,ih=H-T-B;
+  const ymax=Math.max(...ys)*1.1||1,ymin=0;
+  const xmin=Math.min(...xs),xmax=Math.max(...xs);
+  const px=x=>L+(x-xmin)/(xmax-xmin||1)*iw;
+  const py=y=>T+ih-(y-ymin)/(ymax-ymin||1)*ih;
+  let g=`<rect x="${L}" y="${T}" width="${iw}" height="${ih}" fill="#fbfcfd"/>`;
+  for(let i=0;i<=4;i++){const yy=T+ih*i/4;g+=`<line class="gridline" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/><text x="${L-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#8a94a3">${fmt(ymax*(4-i)/4,0)}</text>`}
+  const pts=xs.map((x,i)=>`${px(x)},${py(ys[i])}`).join(' ');
+  g+=`<polyline points="${pts}" fill="none" stroke="#2c5282" stroke-width="2.5"/>`;
+  if(refX!==undefined){const rx=px(refX);g+=`<line x1="${rx}" y1="${T}" x2="${rx}" y2="${T+ih}" stroke="#b8860b" stroke-width="1.5" stroke-dasharray="4 3"/>`}
+  g+=`<line class="axis" x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}"/>`;
+  g+=`<text x="${L+iw/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#5b6472">${xLabel}</text>`;
+  g+=`<text x="14" y="${T+ih/2}" font-size="12" fill="#5b6472" transform="rotate(-90 14 ${T+ih/2})" text-anchor="middle">${yLabel}</text>`;
+  // x刻度
+  const step=(xmax-xmin)/6;
+  for(let i=0;i<=6;i++){const xv=xmin+step*i;g+=`<text x="${px(xv)}" y="${T+ih+18}" text-anchor="middle" font-size="11" fill="#8a94a3">${fmt(xv,0)}</text>`}
+  svg.innerHTML=g;
+}
+function drawDmgChart(){
+  const xs=[],ys=[];for(let d=-30;d<=45;d++){xs.push(d);ys.push(dmgRange(0,d,1).mid)}
+  lineChart('dmgChart',xs,ys,'战力差（攻击方 − 防守方）','期望伤害 HP',+$('dStr').value-+$('aStr').value);
+}
+
+/* ---------- 经济页 ---------- */
+function F(n){n=+n;return 15+8*(n-1)+Math.pow(n-1,1.5)}
+function Pn(n){n=+n;return 10+Math.pow(6*(n-1),1.3)}
+function houseFactor(h,p){const g=h-p;if(g>=2)return 1;if(g===1)return 0.5;if(g>=-4)return 0.25;return 0}
+function renderEcon(){
+  const n=+$('pop').value,s=+$('surplus').value,h=+$('housing').value;
+  const need=F(n),hf=houseFactor(h,n),eff=s*hf;
+  $('needFood').textContent=fmt(need,0);
+  $('houseFactor').textContent=Math.round(hf*100)+'%';
+  $('growTurns').innerHTML=eff>0?fmt(need/eff,1)+' 回合':'<span class="red">停滞</span>';
+  $('foodUse').textContent=(2*n)+' 粮/回合';
+  let tb='';for(let i=1;i<=12;i++){tb+=`<tr><td>${i}</td><td>${fmt(F(i),0)}</td><td>${i===1?'—':'+'+fmt(F(i)-F(i-1),0)}</td></tr>`}
+  document.querySelector('#popTable tbody').innerHTML=tb;
+  const xs=[],ys=[];for(let i=1;i<=12;i++){xs.push(i);ys.push(Pn(i))}
+  lineChart('cultureChart',xs,ys,'第 n 次文化扩地','累计成本（文化）',n);
+  $('buyGoldOut').textContent='🪙 '+(4*+$('buyProd').value);
+  $('buyFaithOut').textContent='✦ '+(2*+$('buyProd').value);
+  $('gpGoldOut').textContent='🪙 '+(200+15*+$('gpLeft').value);
+  const raw=10+1.5*+$('upDiff').value;
+  $('upOut').textContent='🪙 '+Math.max(15,Math.round(raw/5)*5);
+}
+['pop','surplus','housing','buyProd','gpLeft','upDiff'].forEach(id=>$(id).addEventListener('input',renderEcon));
+
+/* ---------- 参数页 ---------- */
+const pmap={p_base:'base',p_k:'k',p_lo:'lo',p_hi:'hi',p_m:'m',p_r:'r',p_s:'s',p_w:'w'};
+function loadParams(){Object.keys(pmap).forEach(id=>$(id).value=P[pmap[id]])}
+function bindParams(){
+  Object.keys(pmap).forEach(id=>$(id).addEventListener('input',()=>{
+    let v=parseFloat($(id).value);if(isNaN(v))return;P[pmap[id]]=v;
+    try{localStorage.setItem('civ6P',JSON.stringify(P))}catch(e){}
+    $('saveNote').textContent='✓ 已更新并保存到本地。切回战斗/经济页查看新结果。';
+    renderAll();
+  }));
+}
+function resetParams(){P={...DEF};try{localStorage.removeItem('civ6P')}catch(e){}loadParams();renderAll();$('saveNote').textContent='↺ 已恢复官方默认口径。'}
+
+/* ---------- 启动 ---------- */
+function renderAll(){renderCombat();renderEcon()}
+loadParams();bindParams();renderAll();
+</script>
+</body>
+</html>

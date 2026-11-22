@@ -1,0 +1,3 @@
+config,core_prod,core_food,core_faith,core_cul,aurora,work_ethic,scripture,wonder_pct_own,wonder_pct_vanilla,wonder_pct_total,era0,era2,era5,skilled_era0,scope,note
+v7_秦始皇专属,0,1,2,1,1,1,1,15,15,30,1.56,1.02,0.65,1.72,LEADER_QIN,当前交付：只对秦始皇生效；加成内容与v5相同，仅发放对象收窄
+v5_通用旧版,0,1,2,1,1,1,1,30,0,30,1.56,1.02,0.65,1.72,所有文明,已废弃：任何文明都能用，且AI秦始皇会吃全时代加速泄漏

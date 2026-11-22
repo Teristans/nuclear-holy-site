@@ -1,0 +1,24 @@
+# --- 游戏本体数据副本与存档：含 Firaxis 版权内容，且体积达 30MB ---
+# db/ 由 build_game_db.py 从本机游戏目录重建，不入库。
+db/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite.bak_*
+*.Civ6Save
+
+# --- 旧版全量备份：改用 git tag 保存历史，不再放文件夹 ---
+# （另有副作用：同 GUID 的两个 .modinfo 若被游戏扫到，会被识别成两个 mod）
+backups/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+
+# --- 编辑器 / 系统 ---
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+*.log

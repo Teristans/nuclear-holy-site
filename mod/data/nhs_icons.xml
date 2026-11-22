@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ============================================================================
+     皇帝之威 · 图标补丁（nhs_icons.xml）  v7.19
+
+     两件事：
+       1) 给原版预留的通知槽 NOTIFICATION_USER_DEFINED_1 补一张图标
+       2) 给特色单位锐士/斥候登记图标名，指向**游戏自带**的原版图集
+
+     ── v7.19 变更：自绘图集全部作废，改用原版图集 ──────────────────────────
+     原因：tools/make_unit_icons.py 手绘的 DDS 风格不统一，实机观感与官方美术
+     差距明显。改为「同名映射」——引擎只按名字找图标，不关心它来自哪个图集，
+     把 ICON_UNIT_NHS_RUISHI 直接指向原版图集里现成的格子即可：
+         · 零贴图、零 ImportFiles、零格式风险（不存在 DDS 头写错导致空白）
+         · 与官方单位同像素级风格，22px 小图标同样清晰
+         · 复制品不会动到原版数据：原 ICON_UNIT_AZTEC_EAGLE_WARRIOR 等仍然指向
+           原来的格子，我们只是**新增**了几个名字，不删不改任何原版行
+
+     选型（用户确认）：
+       锐士 UNIT_NHS_RUISHI → 阿兹特克鹰武士 AZTEC_EAGLE_WARRIOR
+         同为远古近战、同为「勇士的替代单位」，时代与定位完全对应。
+       斥候 UNIT_NHS_SCOUT  → 原版侦察兵 SCOUT
+         它本身就是侦察兵的秦化版，用侦察兵图标不会有任何错位。
+
+     引用来源（逐条核对过游戏文件，非凭记忆）：
+       Base/Assets/UI/Icons/Icons_Units.xml
+          :4-9    ICON_ATLAS_UNITS      256/80/50/38/32/22
+          :10     ICON_ATLAS_UNITS_FOW  32
+          :32     ICON_UNIT_SCOUT                    Index 19
+          :33     ICON_UNIT_WARRIOR                  Index 20
+          :38     ICON_UNIT_AZTEC_EAGLE_WARRIOR      Index 25
+          :133    ICON_UNIT_SCOUT_FOW                Index 19
+          :139    ICON_UNIT_AZTEC_EAGLE_WARRIOR_FOW  Index 25
+       Base/Assets/UI/Icons/Icons_UnitPortraits.xml
+          :5-23   ICON_ATLAS_UNIT_PORTRAITS  256/200/95/70/50/38（8×8）
+          :25-30  ICON_ATLAS_ASIAN_UNIT_PORTRAITS  70/95（8×8）
+          :77     ICON_UNIT_SCOUT_PORTRAIT                Index 17
+          :83     ICON_UNIT_AZTEC_EAGLE_WARRIOR_PORTRAIT  Index 23
+          :178    ICON_ETHNICITY_ASIAN_UNIT_SCOUT_PORTRAIT                Index 17
+          :184    ICON_ETHNICITY_ASIAN_UNIT_AZTEC_EAGLE_WARRIOR_PORTRAIT  Index 23
+
+     为什么要登记这么多名字：
+       地图旗帜 —— UnitFlagManager.lua:524 取 "ICON_" .. UnitType（锐士/斥候各一个）
+       战争迷雾 —— 同上逻辑另取 "_FOW"，缺了在未探索区就是空框
+       单位面板 —— PortraitSupport.lua:96 的回退顺序：
+             ICON_<民族性>_<单位>_PORTRAIT_<时代>   ← 中国 ETHNICITY_ASIAN
+             ICON_<民族性>_<单位>_PORTRAIT
+             ICON_<单位>_PORTRAIT_<时代>
+             ICON_<单位>_PORTRAIT
+          ProductionHelper.lua:54 用 TrySetIcon 逐个试，取第一个存在的。
+       四个都登记，任何一个时代、任何一条路径都能落到图上。
+
+     注意：亚洲图集只有 70/95 两档，这是原版自己的设定（所有中国单位立绘都走它），
+           引擎会自行缩放，不需要额外补尺寸。
+     ============================================================================ -->
+<GameData>
+  <!-- ── 1. 通知图标 ────────────────────────────────────────────────────────
+       引擎渲染通知时按 "ICON_" .. NotificationType 找图集条目
+       （Base/Assets/UI/Panels/NotificationPanel.lua:786-800 的回退链），
+       图集条目缺失就只剩一个空框，且只在日志里刷：
+         [DataError] IconManager is unable to find the icon
+                     "ICON_NOTIFICATION_xxx" at size "40"
+
+       v7.23 起监听改用自建类型 NOTIFICATION_NHS_WONDER_STARTED
+       （见 data/nhs_notifications.xml），这里为它单独配图：
+         Index 57 = ICON_NOTIFICATION_WONDER_COMPLETED
+         同一张「奇观」图形，一眼能认出是奇观相关；标题写「奇观动工」，
+         与「建成」靠文字区分，不再与生产齿轮混在一起被忽略。
+
+       ⚠ v7.27：不再保留 USER_DEFINED_1 的映射，删它的原因见下面那一段。      -->
+
+  <!-- ── v7.27：删掉 ICON_NOTIFICATION_USER_DEFINED_1 那行 ──────────────────
+       它和工坊 3810795757（Civilization Assimilation）抢同一个槽，Database.log 里
+       每周目都刷一条：
+
+         [Database] ERROR: UNIQUE constraint failed: IconDefinitions.Name, IconDefinitions.Atlas
+         values (ICON_NOTIFICATION_USER_DEFINED_1, ICON_ATLAS_NOTIFICATIONS, 4)
+         ← 来自 3810795757/Data/Assimilation_Icons.xml
+
+       (Name, Atlas) 是联合主键，谁先插谁赢，对方那行直接插不进去。本 mod 已不再
+       使用 USER_DEFINED_1 槽（脚本改走自建类型 / 兜底走 WONDER_COMPLETED，后者的
+       图标 ICON_NOTIFICATION_WONDER_COMPLETED 是原版自带），留着这行只会白占别人的槽。
+       删掉后 Assimilation 的 Index 4 能正常落库，两边都有图。            -->
+  <IconDefinitions>
+    <Row Name="ICON_NOTIFICATION_NHS_WONDER_STARTED" Atlas="ICON_ATLAS_NOTIFICATIONS" Index="57"/>
+  </IconDefinitions>
+
+  <!-- ── 2. 特色单位图标（全部复用原版格子） ───────────────────────────────── -->
+  <IconDefinitions>
+    <!-- 地图旗帜 + 战争迷雾 -->
+    <Row Name="ICON_UNIT_NHS_RUISHI"        Atlas="ICON_ATLAS_UNITS"     Index="25"/>
+    <Row Name="ICON_UNIT_NHS_RUISHI_WHITE"  Atlas="ICON_ATLAS_UNITS"     Index="25"/>
+    <Row Name="ICON_UNIT_NHS_RUISHI_FOW"    Atlas="ICON_ATLAS_UNITS_FOW" Index="25"/>
+    <Row Name="ICON_UNIT_NHS_SCOUT"         Atlas="ICON_ATLAS_UNITS"     Index="19"/>
+    <Row Name="ICON_UNIT_NHS_SCOUT_WHITE"   Atlas="ICON_ATLAS_UNITS"     Index="19"/>
+    <Row Name="ICON_UNIT_NHS_SCOUT_FOW"     Atlas="ICON_ATLAS_UNITS_FOW" Index="19"/>
+
+    <!-- 单位面板 / 生产列表 / 百科立绘：通用（多民族性）图集 -->
+    <Row Name="ICON_UNIT_NHS_RUISHI_PORTRAIT"                 Atlas="ICON_ATLAS_UNIT_PORTRAITS" Index="23"/>
+    <Row Name="ICON_UNIT_NHS_RUISHI_PORTRAIT_ERA_ANCIENT"     Atlas="ICON_ATLAS_UNIT_PORTRAITS" Index="23"/>
+    <Row Name="ICON_UNIT_NHS_SCOUT_PORTRAIT"                  Atlas="ICON_ATLAS_UNIT_PORTRAITS" Index="17"/>
+    <Row Name="ICON_UNIT_NHS_SCOUT_PORTRAIT_ERA_ANCIENT"      Atlas="ICON_ATLAS_UNIT_PORTRAITS" Index="17"/>
+
+    <!-- 同上，亚洲民族性版本（中国 ETHNICITY_ASIAN，DebugGameplay.sqlite 实测） -->
+    <Row Name="ICON_ETHNICITY_ASIAN_UNIT_NHS_RUISHI_PORTRAIT"              Atlas="ICON_ATLAS_ASIAN_UNIT_PORTRAITS" Index="23"/>
+    <Row Name="ICON_ETHNICITY_ASIAN_UNIT_NHS_RUISHI_PORTRAIT_ERA_ANCIENT"  Atlas="ICON_ATLAS_ASIAN_UNIT_PORTRAITS" Index="23"/>
+    <Row Name="ICON_ETHNICITY_ASIAN_UNIT_NHS_SCOUT_PORTRAIT"               Atlas="ICON_ATLAS_ASIAN_UNIT_PORTRAITS" Index="17"/>
+    <Row Name="ICON_ETHNICITY_ASIAN_UNIT_NHS_SCOUT_PORTRAIT_ERA_ANCIENT"   Atlas="ICON_ATLAS_ASIAN_UNIT_PORTRAITS" Index="17"/>
+  </IconDefinitions>
+</GameData>

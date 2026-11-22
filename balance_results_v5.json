@@ -1,0 +1,136 @@
+{
+  "configs": {
+    "A_全开(含经文)": {
+      "远古": {
+        "prod": 1.556,
+        "food": 1.417,
+        "plain_prod": 0.962,
+        "faith": 4.941,
+        "skilled_prod": 1.724
+      },
+      "古典": {
+        "prod": 1.206,
+        "food": 1.186,
+        "plain_prod": 0.758,
+        "faith": 2.832,
+        "skilled_prod": 1.368
+      },
+      "中古": {
+        "prod": 1.022,
+        "food": 1.067,
+        "plain_prod": 0.596,
+        "faith": 2.225,
+        "skilled_prod": 1.202
+      },
+      "文艺复兴": {
+        "prod": 0.845,
+        "food": 1.031,
+        "plain_prod": 0.515,
+        "faith": 1.682,
+        "skilled_prod": 1.014
+      },
+      "工业": {
+        "prod": 0.707,
+        "food": 0.986,
+        "plain_prod": 0.46,
+        "faith": 1.375,
+        "skilled_prod": 0.888
+      },
+      "现代": {
+        "prod": 0.649,
+        "food": 0.954,
+        "plain_prod": 0.44,
+        "faith": 1.22,
+        "skilled_prod": 0.812
+      }
+    },
+    "B_不内置经文": {
+      "远古": {
+        "prod": 1.069,
+        "food": 1.417,
+        "plain_prod": 0.654,
+        "faith": 2.857,
+        "skilled_prod": 1.236
+      },
+      "古典": {
+        "prod": 0.879,
+        "food": 1.183,
+        "plain_prod": 0.546,
+        "faith": 1.786,
+        "skilled_prod": 1.048
+      },
+      "中古": {
+        "prod": 0.779,
+        "food": 1.067,
+        "plain_prod": 0.458,
+        "faith": 1.531,
+        "skilled_prod": 0.957
+      },
+      "文艺复兴": {
+        "prod": 0.671,
+        "food": 1.025,
+        "plain_prod": 0.421,
+        "faith": 1.234,
+        "skilled_prod": 0.846
+      },
+      "工业": {
+        "prod": 0.586,
+        "food": 0.988,
+        "plain_prod": 0.391,
+        "faith": 1.071,
+        "skilled_prod": 0.765
+      },
+      "现代": {
+        "prod": 0.554,
+        "food": 0.956,
+        "plain_prod": 0.387,
+        "faith": 0.986,
+        "skilled_prod": 0.72
+      }
+    },
+    "C_只有职业道德": {
+      "远古": {
+        "prod": 0.903,
+        "food": 1.168,
+        "plain_prod": 0.651,
+        "faith": 2.143,
+        "skilled_prod": 1.071
+      },
+      "古典": {
+        "prod": 0.766,
+        "food": 0.979,
+        "plain_prod": 0.547,
+        "faith": 1.429,
+        "skilled_prod": 0.936
+      },
+      "中古": {
+        "prod": 0.675,
+        "food": 0.824,
+        "plain_prod": 0.46,
+        "faith": 1.224,
+        "skilled_prod": 0.851
+      },
+      "文艺复兴": {
+        "prod": 0.597,
+        "food": 0.799,
+        "plain_prod": 0.42,
+        "faith": 1.039,
+        "skilled_prod": 0.771
+      },
+      "工业": {
+        "prod": 0.532,
+        "food": 0.772,
+        "plain_prod": 0.39,
+        "faith": 0.938,
+        "skilled_prod": 0.711
+      },
+      "现代": {
+        "prod": 0.511,
+        "food": 0.737,
+        "plain_prod": 0.386,
+        "faith": 0.884,
+        "skilled_prod": 0.677
+      }
+    }
+  }
+}

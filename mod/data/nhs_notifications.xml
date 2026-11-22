@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ============================================================================
+     皇帝之威 · 自定义通知类型（nhs_notifications.xml）  v7.23
+
+     把「他国动工奇观」从原版预留槽 NOTIFICATION_USER_DEFINED_1 迁到自有类型。
+     迁移动机（v7.22 实机反馈「只提示建成奇观，没提示开建」的根因之一）：
+
+       · 原版预留槽的行写死了 ExpiresEndOfTurn=True
+         （Base/Assets/Gameplay/Data/Notifications.xml:52-60）
+         ⇒ 通知在**当回合结束**就被清掉。而本 mod 是在 OnGameTurnStarted 时发的，
+         玩家常常还没扫到右侧通知栏它就没了。
+       · 预留槽的 Icon 列为空，通知栏只能靠 "ICON_"..类型名 的回退去猜图标；
+         九个槽共用一张图，堆在一起时与其他 mod 的通知互相淹没。
+       · 九个槽是公共资源，任何 mod 都能用，堆叠（同类型归一组）会互相串。
+
+     三点全部由「自建类型」解决：独占一个堆叠组、独占一张图标、常驻通知栏不自动过期。
+
+     写法照抄官方 DLC 注册自定义通知的完整两步（少一步枚举就是 nil）：
+       DLC/Babylon/Data/Babylon_Heroes_MODE.xml:104-105  → <Types> 注册 Kind
+       DLC/Babylon/Data/Babylon_Heroes_MODE.xml:820       → <Notifications> 定义行
+     只写 <Notifications> 而不写 <Types>，Lua 里 NotificationTypes.NHS_WONDER_STARTED
+     取到的是 nil（实测 DebugGameplay.sqlite 的 Types 表里 211 条 KIND_NOTIFICATION，
+     枚举正是由它生成的）。
+
+     列的含义（对照 Notifications 表 13 列）：
+       ExpiresEndOfTurn="False" + ExpiresEndOfNextTurn="False"
+                                   → 两个都为 0 ＝ 常驻，直到玩家自己点掉；
+                                   与原版 NOTIFICATION_WONDER_COMPLETED 同款
+                                   （v7.24 从 True 改回 0/0：写 True 实测只挂 1 回合）
+       GroupType="NOTIFICATION_NHS_WONDER_STARTED"
+                                   → 原版把 GroupType 当成**任意字符串**当分组键用
+                                   （如 Notifications.xml:163 的
+                                     GroupType="NOTIFICATION_TECH_DISCOVERED"，
+                                     而库里根本没有 NotificationGroups 表），
+                                   写自己的类型名即可独占一组。不要写 "USER"——
+                                   那是九个预留槽共用的组，会和别的 mod 挤在一起。
+       VisibleInUI / ShowIconSinglePlayer = True
+                                   → 必须为真，否则通知栏不生成图标条目（=完全看不见）
+       Icon 列不写：与原版惯例一致，引擎按 "ICON_"..NotificationType 找图集条目，
+       由 data/nhs_icons.xml 提供 ICON_NOTIFICATION_NHS_WONDER_STARTED
+       Message / Summary 不写：正文由脚本用 Locale.Lookup 拼好直接传入
+       （范式见 DLC/BlackDeathScenario/Scripts/BlackDeathScenario_Support.lua:23-28）
+     ============================================================================ -->
+<GameData>
+
+  <!-- ── 1. 注册类型（生成 Lua 枚举 NotificationTypes.NHS_WONDER_STARTED） ── -->
+  <Types>
+    <Row Type="NOTIFICATION_NHS_WONDER_STARTED" Kind="KIND_NOTIFICATION"/>
+  </Types>
+
+  <!-- ── 2. 定义通知行 ──────────────────────────────────────────────────── -->
+  <!-- v7.24：两个过期标志都改 False —— 与「奇观建成」通知完全一致（原版
+       NOTIFICATION_WONDER_COMPLETED 的行就是 EndOfTurn=0 / EndOfNext=0），
+       也就是**常驻通知栏，直到玩家自己点掉**。
+       v7.23 曾写 ExpiresEndOfNextTurn=True，实机只挂了 1 回合就消失，
+       与「长期显示」的预期不符，故改回 0/0。 -->
+  <Notifications>
+    <Row NotificationType="NOTIFICATION_NHS_WONDER_STARTED"
+         SeverityType="MID"
+         ExpiresEndOfTurn="False"
+         ExpiresEndOfNextTurn="False"
+         AutoNotify="False"
+         GroupType="NOTIFICATION_NHS_WONDER_STARTED"
+         VisibleInUI="True"
+         ShowIconSinglePlayer="True"/>
+  </Notifications>
+
+</GameData>

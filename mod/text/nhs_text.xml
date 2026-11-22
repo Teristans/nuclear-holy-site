@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  皇帝之威 · 本地化文本（v7.3 起从 sql/nhs_03_locale.sql 迁移到此处）
+
+  为什么必须迁：
+    UpdateDatabase 动作作用在 Gameplay 数据库，该库没有 LocalizedText 表，
+    原 SQL 的 INSERT 全部报 "no such table: LocalizedText" 而静默失败，
+    导致特征界面直接显示 LOC_TRAIT_NHS_* 原始 tag（用户看到 6 行英文键名）。
+
+  结构依据（对照官方 DLC/Australia、DLC/Expansion2 的 Text/*.xml）：
+    · 默认语言（en_US）用 <BaseGameText><Row Tag=".."><Text>..
+    · 其他语言用 <LocalizedText><Replace Tag=".." Language="zh_Hans_CN"><Text>..
+    · 简体中文的语言代码是 zh_Hans_CN，不是 zh_CN（后者游戏不认）
+
+  【v7.4 文案调整】
+    1. 五项改名：核动力圣地→横渠、俄罗斯母亲→披荆斩棘、
+       国王的修道院→江河淮济、核动力信条→勤劳、御用工匠→奇观狂魔
+    2. 描述只保留玩家需要知道的机制与数值，删去实现层注脚
+       （"AI 拿不到"、"克隆自原版"、"本 Mod 追加"、"若你不是秦始皇则无效"等）
+
+  【v7.10 名称统一为四字】
+    横渠→横渠立心（张载横渠四句"为天地立心"）
+    勤劳→勤则不匮（《左传》"民生在勤，勤则不匮"）
+    驰道→驰道通都（秦驰道皆起咸阳、通达各郡）
+    其余五项（披荆斩棘 / 江河淮济 / 筚路蓝缕 / 奇观狂魔 / 法令一统）本就是四字，未动
+
+  【v11 首项改名：横渠立心 → 天命玄鸟】
+    原「横渠立心」出张载（北宋）横渠四句，是八项中唯一的宋代典故，
+    与其余先秦典（左传）与秦制（驰道、法令）不同代。改用《诗·商颂·玄鸟》
+    「天命玄鸟，降而生商」原句前四字。秦人族源亦为玄鸟陨卵（《史记·秦本纪》
+    女脩吞玄鸟卵生大业），故用于秦始皇不算误植。英文取 Heaven-Sent Swallow。
+    tag LOC_TRAIT_NHS_NAME 未动（SQL 外键）。
+
+  【v12 第六项改名：奇观狂魔 → 物勒工名】
+    原名是现代网络语，与其余七项的先秦典/秦制不同层。改用《礼记·月令》
+    「物勒工名，以考其诚，功有不当，必行其罪」——器物与工程刻施工者名，
+    质量终身追溯。秦有实物实证：兵器铭文「相邦吕不韦造／工师／丞／工」四级署名，
+    兵马俑坑砖瓦亦见工匠名；睡虎地秦简《工律》规定同型器物尺寸必等（标准化生产）。
+    字面暗合机制：建造者亲手把进度打进奇观。英文取 The Maker's Name。
+
+  【v13 补宜居度：nhs_13_amenities.sql】
+    实机反馈宜居度严重不足。根因是本 mod 的食物 +1、住房 +2 与职业道德产能
+    把人口推得比原版快，而宜居度供给端（奢侈品/娱乐区）没变。
+    补法：所有城市 +1，圣地所在城再 +1（合计 +2）。
+    机制取自原版数字民主（每城 +2、无门槛）与河神信条（圣地 +2 区域宜居度），
+    圣地门槛复用原版 reqset DISTRICT_IS_HOLY_SITE。挂在核心特性上，不新增第 9 条特性。
+
+  【数值必须与 nhs_01_core.sql / nhs_13_amenities.sql 实际值一致】
+    产能 +0 / 食物 +1 / 信仰 +2 / 文化 +1 / 住房 +2 / 宜居度 +1（全城）、+2（圣地城）
+    v14 追加：首都 +1 信仰/回合（nhs_01_core.sql 第 4b 节，只加首都）
+
+  【v28 平衡调整，文案已同步】
+    · 首都再加 +2 食物、+2 产能        → nhs_16_tuning.sql 二、三
+    · 圣地建造 +50%                   → nhs_16_tuning.sql 一
+    · 经文圣地相邻 +100% 改为 +50%     → nhs_16_tuning.sql 四（UPDATE 克隆参数）
+    · 物勒工名时代上限最初收到 3（中世纪），v7.36 又放开为全时代、
+      并把文艺复兴之后的幅度降到 15% → nhs_09_wonder_era.sql + nhs_08 第 1b 节
+    前三条读档即生效；第四条若存档里已在文艺复兴之后，本局看不到变化。
+
+  【v46 帝国规模：科技不再随人口等比膨胀，nhs_18_tech_scaling.sql】
+    ★ v46 把三档从 −18/−20/−15（累计 −53%）调轻为 −10/−12/−8（累计 −30%）。
+      原因不是「机制不生效」，而是 t150 实测显示 −53% 压到了 1.03 倍（科技与 AI 完全持平），
+      而折扣在 16 人口封顶，此后人类每新增人口/建筑只拿 47% 收益、AI 拿 100%，
+      按该斜率 t250 之后会被反超。1.26 倍才是「明显领先但不碾压」。
+    存档 t300 实测科研为最强 AI 的 6.6 倍，但每人口科研只高 19%（1.92 对 1.13），
+    差距来自人口总量 2.49 倍。故不动乘数，只让人口这条轴自行收敛：
+    所有城市科研 −10%；人口 ≥10 的城市再 −12%（累计 −22%）；
+    人口 ≥16 的城市再 −8%（累计 −30%）。
+    机制为原版 MODIFIER_PLAYER_CITIES_ADJUST_CITY_YIELD_MODIFIER + 负百分比，
+    与巴比伦 TRAIT_SCIENCE_DECREASE（−50% 科研）、权力下放（人口≥7 金币 −15%）
+    同形同 effect。
+    ★ 排障历史（v42 已查明，别再照旧结论办）：
+      v37（每人口负值）/ v38（负百分比）/ v40（加算固定值）三轮「实机零效果」，
+      真实原因**不是 effect**，而是三轮都在同一个老存档上测——
+      Civ6 建局时就把玩家已挂载的 modifier 集合写进存档，之后新增的 SQL 只进游戏库、
+      不追溯。v41 探针把三条改成 +20 正值，逐城科研一分未动，即为铁证。
+      结论：本层只能**新开一局**验证，老存档永远测不出来（详见 nhs_18 文件头）。
+    此处只描述，数值以 nhs_18 的 Amount 为准；改数值必须同步本段与 modinfo。
+-->
+<GameData>
+
+  <!-- ======================= 默认语言（英文） ======================= -->
+  <BaseGameText>
+
+    <Row Tag="LOC_TRAIT_NHS_NAME">
+      <Text>Heaven-Sent Swallow</Text>
+    </Row>
+    <Row Tag="LOC_TRAIT_NHS_DESC">
+      <Text>All your cities gain +1 Amenity. Cities with a Holy Site gain a further +1 Food, +2 Faith, +1 Culture, +2 Housing and +1 Amenity. Your capital gains +1 Faith, +2 Food and +2 Production per turn, and Holy Sites are built 50% faster. Each Farm adjacent to a Holy Site gives that Holy Site +1 Faith. Production is not granted directly - it comes from Diligence converting Holy Site adjacency. Also grants Cleaving Thorns, Four Rivers, Diligence, Enduring Pioneers, The Maker's Name, Imperial Highway and Unified Statutes. Imperial Scale: all cities suffer -10% Science, cities of 10 or more population suffer -12% more (-22% in total), and cities of 16 or more suffer a further -8% (-30% in total) - so Science no longer scales linearly with population; the larger the city, the heavier the drag.</Text>
+    </Row>
+
+    <Row Tag="LOC_TRAIT_NHS_MR_NAME">
+      <Text>Cleaving Thorns</Text>
+    </Row>
+    <Row Tag="LOC_TRAIT_NHS_MR_DESC">
+      <Text>Tundra tiles provide +1 Faith and +1 Production. Farms may be built on Tundra, and on Tundra Hills once Civil Engineering is unlocked. On Tundra, Tundra Hills, Snow and Snow Hills, Farms and Camps provide +2 Food, Mines and Lumber Mills provide +2 Production, strategic resource accumulation is +100%, and tile purchase cost is 50% lower. Newly founded cities claim 5 extra tiles of territory.</Text>
+    </Row>
+
+    <Row Tag="LOC_TRAIT_NHS_MK_NAME">
+      <Text>Four Rivers</Text>
+    </Row>
+    <Row Tag="LOC_TRAIT_NHS_MK_DESC">
+      <Text>Holy Sites receive a major adjacency bonus from Rivers, yield Food equal to their adjacency bonus, gain +2 Housing when adjacent to a River, and trigger a Culture Bomb when built.</Text>
+    </Row>
+
+    <Row Tag="LOC_TRAIT_NHS_BEL_NAME">
+      <Text>Diligence</Text>
+    </Row>
+    <Row Tag="LOC_TRAIT_NHS_BEL_DESC">
+      <Text>Grants Dance of the Aurora (+1 Faith to Holy Sites per adjacent Tundra tile), Work Ethic (Holy Site adjacency becomes Production), Jesuit Education (buy Campus and Theater buildings with Faith) and the Scripture policy effect (+50% Holy Site adjacency). Dance of the Aurora works immediately and needs no Pantheon; Work Ethic and Jesuit Education require a founded religion that your cities follow.</Text>
+    </Row>
+
+    <Row Tag="LOC_TRAIT_NHS_MOVE_NAME">
+      <Text>Enduring Pioneers</Text>
+    </Row>
+    <Row Tag="LOC_TRAIT_NHS_MOVE_DESC">
+      <Text>Scouts +3 Movement (3 to 6), Settlers +2 Movement (2 to 4).</Text>
+    </Row>
+
+    <Row Tag="LOC_TRAIT_NHS_BUILDER_NAME">
+      <Text>The Maker's Name</Text>
+    </Row>
+    <Row Tag="LOC_TRAIT_NHS_BUILDER_DESC">
+      <Text>Builders may expend a charge to add 30% progress to any Wonder under construction. From the Renaissance era onward, this falls to 15%.</Text>
+    </Row>
+
+    <Row Tag="LOC_TRAIT_NHS_ROAD_NAME">
+      <Text>Imperial Highway</Text>
+    </Row>
+    <Row Tag="LOC_TRAIT_NHS_ROAD_DESC">
+      <Text>Every city you found is immediately connected to your capital by road.</Text>
+    </Row>
+
+    <Row Tag="LOC_TRAIT_NHS_EDICT_NAME">
+      <Text>Unified Statutes</Text>
+    </Row>
+    <Row Tag="LOC_TRAIT_NHS_EDICT_DESC">
+      <Text>You gain 1 extra Wildcard policy slot from the start of the game, in every government.</Text>
+    </Row>
+
+    <!-- ============ 秦郡城名（v7.6，供 nhs_10_city_names.sql 引用）============ -->
+    <Row Tag="LOC_CITY_NAME_QIN_XIANYANG"><Text>Xianyang</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_LONGXI"><Text>Longxi</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_HANZHONG"><Text>Hanzhong</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_HANDAN"><Text>Handan</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_JULU"><Text>Julu</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_YANMEN"><Text>Yanmen</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_KUAIJI"><Text>Kuaiji</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_LANGYA"><Text>Langya</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_SHANGJUN"><Text>Shangjun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_BEIDI"><Text>Beidi</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_YUNZHONG"><Text>Yunzhong</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_TAIYUAN"><Text>Taiyuan</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_SHANGDANG"><Text>Shangdang</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_SANCHUAN"><Text>Sanchuan</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_YINGCHUAN"><Text>Yingchuan</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_NANYANG"><Text>Nanyang</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_NANJUN"><Text>Nanjun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_CHANGSHA"><Text>Changsha</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_BAJUN"><Text>Bajun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_SHUJUN"><Text>Shujun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_SHANGGU"><Text>Shanggu</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_YUYANG"><Text>Yuyang</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_YOUBEIPING"><Text>Youbeiping</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_LIAOXI"><Text>Liaoxi</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_LIAODONG"><Text>Liaodong</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_DAIJUN"><Text>Daijun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_HEDONG"><Text>Hedong</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_DONGJUN"><Text>Dongjun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_DANGJUN"><Text>Dangjun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_SISHUI"><Text>Sishui</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_XUEJUN"><Text>Xuejun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_DONGHAI"><Text>Donghai</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_JIUJIANG"><Text>Jiujiang</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_QIJUN"><Text>Qijun</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_JIAODONG"><Text>Jiaodong</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_JIBEI"><Text>Jibei</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_NEISHI"><Text>Neishi</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_JIUYUAN"><Text>Jiuyuan</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_NANHAI"><Text>Nanhai</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_GUILIN"><Text>Guilin</Text></Row>
+    <Row Tag="LOC_CITY_NAME_QIN_XIANGJUN"><Text>Xiangjun</Text></Row>
+
+    <!-- ============ 特色单位（v7.16，供 nhs_14_units.sql 引用）============ -->
+    <Row Tag="LOC_UNIT_NHS_RUISHI_NAME"><Text>Elite Warrior</Text></Row>
+    <Row Tag="LOC_UNIT_NHS_RUISHI_DESCRIPTION"><Text>The picked warriors of Qin, whom Xunzi counted the finest troops of the age. A unique melee unit that replaces the Warrior and upgrades to the Swordsman. Has a chance to capture defeated enemy combat units as Builders.</Text></Row>
+    <Row Tag="LOC_UNIT_NHS_SCOUT_NAME"><Text>Outrider</Text></Row>
+    <Row Tag="LOC_UNIT_NHS_SCOUT_DESCRIPTION"><Text>Lightly equipped riders sent far ahead of the host. A unique recon unit that replaces the Scout and upgrades to the Ranger.</Text></Row>
+
+    <!-- ============ 奇观监听通知（v7.17，v7.23 修正）============
+         由 lua/nhs_wonder_watch.lua 用 Locale.Lookup 取用，占位符 {1_}{2_}{3_}
+         按序号（不是名字）对应 Notify 传入的 文明名 / 城市名 / 奇观名。
+         v7.23 修正：英文正文原为「{2_WonderName} ... {3_CityName}」，与传参顺序相反，
+         会读成「has begun building <城> in <奇观>」；现统一为 1=文明 2=城市 3=奇观。
+         这两个 tag 不进任何数据表，只在这一层做文本，不要挪到 SQL。 -->
+    <Row Tag="LOC_NHS_WATCH_TITLE"><Text>A Wonder Has Been Started</Text></Row>
+    <Row Tag="LOC_NHS_WATCH_BODY"><Text>{1_CivName} has begun building {3_WonderName} in {2_CityName}.</Text></Row>
+    <!-- 文明名兜底（v7.23）：玩家配置取不到时的占位，不显示裸的 "?" -->
+    <Row Tag="LOC_NHS_UNKNOWN_CIV"><Text>Another civilization</Text></Row>
+
+    <!-- ============ 圣地相邻加成说明（v24）============
+         由 nhs_01_core.sql 的 NHS_HOLY_SITE_FARM_FAITH 通过 Description 参数引用，
+         显示在圣地（区域）详情面板的相邻加成列表里。
+         {1_num} 会被 Amount（=1）替换，写法照原版 LOC_DISTRICT_DISTRICT_1_FAITH
+         （"+{1_num} [ICON_Faith] Faith from the adjacent district."）。 -->
+    <Row Tag="LOC_NHS_DISTRICT_FARM_FAITH"><Text>+{1_num} [ICON_Faith] Faith from each adjacent Farm.</Text></Row>
+
+  </BaseGameText>
+
+  <!-- ======================= 简体中文 ======================= -->
+  <LocalizedText>
+
+    <Replace Tag="LOC_TRAIT_NHS_NAME" Language="zh_Hans_CN">
+      <Text>天命玄鸟</Text>
+    </Replace>
+    <Replace Tag="LOC_TRAIT_NHS_DESC" Language="zh_Hans_CN">
+      <Text>所有城市 +1 宜居度，疆域达 5、9、13 座城时各再 +1 宜居度（合计最多 +5）；拥有圣地的城市再得 +1 食物、+2 信仰、+1 文化、+2 住房、+1 宜居度。首都每回合额外 +1 信仰、+2 食物、+2 产能，圣地建造速度 +50%。圣地每与一处农场相邻再得 +1 信仰。产能不直接发放，由「勤则不匮」按圣地相邻值转化。同时获得披荆斩棘、江河淮济、勤则不匮、筚路蓝缕、物勒工名、驰道通都、法令一统七项能力。另附帝国规模：疆域愈广、人丁愈蕃，则每丁所出之智愈薄——所有城市科研 −10%，人口十以上的大城再 −12%（累计 −22%），人口十六以上的巨型城再 −8%（累计 −30%）。使科技不再随人口等比膨胀，人口越多抑制越重。</Text>
+    </Replace>
+
+    <Replace Tag="LOC_TRAIT_NHS_MR_NAME" Language="zh_Hans_CN">
+      <Text>披荆斩棘</Text>
+    </Replace>
+    <Replace Tag="LOC_TRAIT_NHS_MR_DESC" Language="zh_Hans_CN">
+      <Text>苔原地块 +1 信仰、+1 产能。冻土上可建农场，解锁土木工程后冻土丘陵亦可建农场。苔原与雪原（含丘陵）上，农场与营地各 +2 食物，矿场与伐木场各 +2 产能，战略资源累积 +100%，购买地块费用减半。新建城市额外获得 5 格领土。</Text>
+    </Replace>
+
+    <Replace Tag="LOC_TRAIT_NHS_MK_NAME" Language="zh_Hans_CN">
+      <Text>江河淮济</Text>
+    </Replace>
+    <Replace Tag="LOC_TRAIT_NHS_MK_DESC" Language="zh_Hans_CN">
+      <Text>圣地与河流相邻时获得大相邻加成，圣地食物产出等于其相邻加成，靠河时额外 +2 住房，建成圣地触发文化炸弹。圣地需靠河才有大相邻与住房，选址优先找河。</Text>
+    </Replace>
+
+    <Replace Tag="LOC_TRAIT_NHS_BEL_NAME" Language="zh_Hans_CN">
+      <Text>勤则不匮</Text>
+    </Replace>
+    <Replace Tag="LOC_TRAIT_NHS_BEL_DESC" Language="zh_Hans_CN">
+      <Text>获得极光之舞（圣地 +1 信仰/相邻冻土）、职业道德（圣地相邻信仰等量产锤；原版附带的「每信徒 +1 产能」已剔除，不随人口膨胀）、耶稣会教育（信仰可买学院/剧院建筑）与经文政策卡（圣地相邻 +50%）。极光之舞即刻生效，无需万神殿；职业道德与耶稣会教育需已创教、且城市信奉你的宗教。若你自行又选了极光之舞，相邻冻土会叠加为 +2。</Text>
+    </Replace>
+
+    <Replace Tag="LOC_TRAIT_NHS_MOVE_NAME" Language="zh_Hans_CN">
+      <Text>筚路蓝缕</Text>
+    </Replace>
+    <Replace Tag="LOC_TRAIT_NHS_MOVE_DESC" Language="zh_Hans_CN">
+      <Text>侦察兵移动力 +3（3→6），移民移动力 +2（2→4）。</Text>
+    </Replace>
+
+    <Replace Tag="LOC_TRAIT_NHS_BUILDER_NAME" Language="zh_Hans_CN">
+      <Text>物勒工名</Text>
+    </Replace>
+    <Replace Tag="LOC_TRAIT_NHS_BUILDER_DESC" Language="zh_Hans_CN">
+      <Text>建造者可消耗一次使用次数，为任意在建奇观推进 30% 进度；自文艺复兴时代起，每次推进幅度降为 15%。</Text>
+    </Replace>
+
+    <Replace Tag="LOC_TRAIT_NHS_ROAD_NAME" Language="zh_Hans_CN">
+      <Text>驰道通都</Text>
+    </Replace>
+    <Replace Tag="LOC_TRAIT_NHS_ROAD_DESC" Language="zh_Hans_CN">
+      <Text>你新建的每一座城市立刻与首都以道路连通。</Text>
+    </Replace>
+
+    <Replace Tag="LOC_TRAIT_NHS_EDICT_NAME" Language="zh_Hans_CN">
+      <Text>法令一统</Text>
+    </Replace>
+    <Replace Tag="LOC_TRAIT_NHS_EDICT_DESC" Language="zh_Hans_CN">
+      <Text>自游戏开始即额外拥有 1 个通配符政策槽，更换任何政体后依然保留。</Text>
+    </Replace>
+
+    <!-- ============ 秦郡城名（v7.6）============ -->
+    <Replace Tag="LOC_CITY_NAME_QIN_XIANYANG" Language="zh_Hans_CN"><Text>咸阳</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_LONGXI" Language="zh_Hans_CN"><Text>陇西</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_HANZHONG" Language="zh_Hans_CN"><Text>汉中</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_HANDAN" Language="zh_Hans_CN"><Text>邯郸</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_JULU" Language="zh_Hans_CN"><Text>巨鹿</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_YANMEN" Language="zh_Hans_CN"><Text>雁门</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_KUAIJI" Language="zh_Hans_CN"><Text>会稽</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_LANGYA" Language="zh_Hans_CN"><Text>琅琊</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_SHANGJUN" Language="zh_Hans_CN"><Text>上郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_BEIDI" Language="zh_Hans_CN"><Text>北地</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_YUNZHONG" Language="zh_Hans_CN"><Text>云中</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_TAIYUAN" Language="zh_Hans_CN"><Text>太原</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_SHANGDANG" Language="zh_Hans_CN"><Text>上党</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_SANCHUAN" Language="zh_Hans_CN"><Text>三川</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_YINGCHUAN" Language="zh_Hans_CN"><Text>颍川</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_NANYANG" Language="zh_Hans_CN"><Text>南阳</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_NANJUN" Language="zh_Hans_CN"><Text>南郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_CHANGSHA" Language="zh_Hans_CN"><Text>长沙</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_BAJUN" Language="zh_Hans_CN"><Text>巴郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_SHUJUN" Language="zh_Hans_CN"><Text>蜀郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_SHANGGU" Language="zh_Hans_CN"><Text>上谷</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_YUYANG" Language="zh_Hans_CN"><Text>渔阳</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_YOUBEIPING" Language="zh_Hans_CN"><Text>右北平</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_LIAOXI" Language="zh_Hans_CN"><Text>辽西</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_LIAODONG" Language="zh_Hans_CN"><Text>辽东</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_DAIJUN" Language="zh_Hans_CN"><Text>代郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_HEDONG" Language="zh_Hans_CN"><Text>河东</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_DONGJUN" Language="zh_Hans_CN"><Text>东郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_DANGJUN" Language="zh_Hans_CN"><Text>砀郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_SISHUI" Language="zh_Hans_CN"><Text>泗水</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_XUEJUN" Language="zh_Hans_CN"><Text>薛郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_DONGHAI" Language="zh_Hans_CN"><Text>东海</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_JIUJIANG" Language="zh_Hans_CN"><Text>九江</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_QIJUN" Language="zh_Hans_CN"><Text>齐郡</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_JIAODONG" Language="zh_Hans_CN"><Text>胶东</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_JIBEI" Language="zh_Hans_CN"><Text>济北</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_NEISHI" Language="zh_Hans_CN"><Text>内史</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_JIUYUAN" Language="zh_Hans_CN"><Text>九原</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_NANHAI" Language="zh_Hans_CN"><Text>南海</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_GUILIN" Language="zh_Hans_CN"><Text>桂林</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_QIN_XIANGJUN" Language="zh_Hans_CN"><Text>象郡</Text></Replace>
+
+    <!-- ============ 特色单位（v7.16）============ -->
+    <Replace Tag="LOC_UNIT_NHS_RUISHI_NAME" Language="zh_Hans_CN"><Text>锐士</Text></Replace>
+    <Replace Tag="LOC_UNIT_NHS_RUISHI_DESCRIPTION" Language="zh_Hans_CN"><Text>秦之锐士，《荀子·议兵》谓「魏氏之武卒不可以遇秦之锐士」。秦始皇专属近战单位，替代勇士，可升级为剑士。击败敌方战斗单位时，有几率将其俘获为建造者。</Text></Replace>
+    <Replace Tag="LOC_UNIT_NHS_SCOUT_NAME" Language="zh_Hans_CN"><Text>斥候</Text></Replace>
+    <Replace Tag="LOC_UNIT_NHS_SCOUT_DESCRIPTION" Language="zh_Hans_CN"><Text>轻装远探，先大军而行。秦始皇专属侦察单位，替代侦察兵，可升级为游骑兵。</Text></Replace>
+
+    <!-- ============ 奇观监听通知（v7.17，v7.23 修正）============
+         英文正文的占位符序号已按英文语序重排（1=文明 2=城市 3=奇观），
+         Locale.Lookup 按**序号**替换，与出现顺序无关。 -->
+    <Replace Tag="LOC_NHS_WATCH_TITLE" Language="zh_Hans_CN"><Text>奇观动工</Text></Replace>
+    <Replace Tag="LOC_NHS_WATCH_BODY" Language="zh_Hans_CN"><Text>{1_CivName}已在{2_CityName}动工兴建{3_WonderName}。</Text></Replace>
+    <Replace Tag="LOC_NHS_UNKNOWN_CIV" Language="zh_Hans_CN"><Text>他国</Text></Replace>
+
+    <Replace Tag="LOC_NHS_DISTRICT_FARM_FAITH" Language="zh_Hans_CN"><Text>每相邻一处农场 +{1_num} [ICON_Faith] 信仰值。</Text></Replace>
+
+    <!-- ============ 神都 → 雍城（v7.22）============
+         见 sql/nhs_10_city_names.sql 第 1.2 节：DLC「中国统治者包」
+         （RulersOfChina_Civilizations.xml:11-13）给武则天往中国城名池插了一行
+         LOC_CITY_NAME_SHEN_DU，且该 DLC 在 mod 之后加载，SQL 的 DELETE 删不到它。
+         文本通道（UpdateText）一定最后应用，所以在这里直接把名字改掉——
+         无论那行数据在不在，玩家看到的都不会是「神都」。
+         雍城：秦德公迁都于此（今陕西凤翔），秦都近三百年，与整套秦郡名同源。
+         这一改也覆盖武则天作为 AI 时的首都名（她的 CapitalName 同为 SHEN_DU）。 -->
+    <Replace Tag="LOC_CITY_NAME_SHEN_DU" Language="zh_Hans_CN"><Text>雍城</Text></Replace>
+    <Replace Tag="LOC_CITY_NAME_SHEN_DU" Language="en_US"><Text>Yongcheng</Text></Replace>
+
+  </LocalizedText>
+
+</GameData>

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  核动力圣地 / Nuclear Holy Site
+  游戏数值平衡专家 设计产物 · v7（秦始皇专属版）
+
+  v7 变更：从「所有文明的人类玩家」收缩为「只对秦始皇生效」。
+  原因：全时代奇观解禁必须改全局表 UnitCommands，加不了人类门槛；
+  而人类玩秦始皇时 AI 不可能是秦始皇，泄漏才真正归零。
+
+  结构说明（已对照游戏自带的 43 个 modinfo 校验）：
+    游戏本体所有 modinfo 都用 <Mod><Properties><InGameActions> 这一层结构，
+    没有任何一个使用旧式的 <Modules><Module> 或 <Handles>。
+    v6 已改为原生写法，与 Expansion2.modinfo 等保持一致。
+-->
+<Mod id="9F3C1A70-4E48-4B21-9D8E-202611200001" version="46">
+  <Properties>
+    <Name>皇帝之威 · Majesty of the First Emperor（v46）</Name>
+    <Teaser>六王毕，四海一。八威仪加诸一身——圣地生万物，法令出无声，驰道通咸阳。</Teaser>
+    <Description>【v46 · 2026-11-22】 本行版本号与标题栏同时显示，用于确认游戏真的读到了最新文件——Civ6 只在进程启动时解析一次 modinfo，改完文件不重启，此处仍会显示旧版本号。【秦始皇专属】秦王扫六合，虎视何雄哉。此mod为始皇帝加冕，八威仪俱在：一曰天命玄鸟，所有城市 +1 宜居度，疆域达 5、9、13 座城时各再 +1（合计最多 +5），拥圣地的城市再加 +1 食物、+2 信仰、+1 文化、+2 住房、+1 宜居度，首都每回合 +1 信仰、+2 食物、+2 产能，圣地建造提速五成，圣地每邻一处农场再 +1 信仰，产能不直发而由「勤则不匮」转化；二曰披荆斩棘，苔原 +1 信仰 +1 产能，冻土可建农场（冻土丘陵待土木工程解锁）、苔原与雪原上农场与营地各 +2 食物、矿场与伐木场各 +2 产能、战略资源累积翻倍、买地半价，新城额外攫取 5 格疆土；三曰江河淮济，圣地傍河得大相邻、食物等其相邻值，靠河 +2 住房，建成即爆文化炸弹；四曰勤则不匮，极光之舞无需万神殿即刻加身、相邻冻土即为信仰，创教之后职业道德更将相邻信仰尽化为产能（原版附带的「每信徒 +1 产能」已剔除，不随人口膨胀）；五曰筚路蓝缕，开局勇士即为锐士、侦察兵即为斥候，斥候移速 3→6，移民 2→4，锐士克敌有几率俘其卒为工匠；六曰物勒工名，任何时代的奇观皆可加速，建造者耗一次使用次数推进 30%，自文艺复兴时代起降为 15%；七曰驰道通都，新城落成之日即与咸阳以道路相通；八曰法令一统，自开局起多一格通配符政策，易政而不失。书同文，车同轨，筑长城以御胡，修驰道以通天下——凡此八者，唯中国·秦始皇可承；若你选的不是这位千古一帝，则一切威仪与你无关。另附开局地形：选中国时，出生地偏向冻土与平原的交界、并尽量靠近河流（此项由地图生成期按文明生效，中国各领袖皆然，非秦始皇独享）。另附奇观监听：他国动工兴造奇观之日即有奏报入朝，唯已相遇者方在报中；奏报常驻，非手批不消。另附帝国规模：疆域愈广、人丁愈蕃，则每丁所出之智愈薄——所有城市科研 −10%，人口十以上的大城再 −12%（累计 −22%），人口十六以上的巨型城再 −8%（累计 −30%），使科技不再随人口等比膨胀，人口越多抑制越重。</Description>
+    <Authors>游戏数值平衡专家 (WorkBuddy)</Authors>
+    <ShowInBrowser>AlwaysShow</ShowInBrowser>
+    <EnabledByDefault>1</EnabledByDefault>
+    <CompatibleVersions>2.0</CompatibleVersions>
+  </Properties>
+  <InGameActions>
+    <!-- 【v35 关键】每个 UpdateDatabase 组件都必须写 <Properties><LoadOrder>500</LoadOrder></Properties>
+
+         原因是执行顺序，不是可选项：
+           官方资料片的建库组件带 LoadOrder=100（Expansion2Core 甚至是 -100），
+           而 modinfo 不写 LoadOrder 时为 0 —— 即在**所有官方内容之前**建库。
+
+         v34 那局就是这样失败的：22 个文件全部加载、Database.log 零报错、双校验全绿，
+         但游戏库少了 30 条修饰器，因为下面的写法在源数据还不存在时匹配 0 行：
+             INSERT OR IGNORE INTO Modifiers ... SELECT ...
+             FROM TraitModifiers WHERE TraitType = 'TRAIT_LEADER_LAST_BEST_WEST'
+         加拿大这个 trait 要等 Expansion1_Leaders 才插入，比我们晚约 0.35 秒。
+         INSERT...SELECT 命中 0 行**不报错**，于是 26 条冻土农场修饰器一条都没进库，
+         连「勤则不匮」的产能转化本体也一起丢了。
+
+         取 500 的理由：> 官方最大值 100，又小于工坊里用 999/1000/9999/10000 的那批，
+         既不与官方抢顺序，也不插到别人的流程中间（实测当前 16 个第三方 mod 无人用 500）。
+         同一 LoadOrder 下按本文件里的声明顺序执行，所以 nhs_01 → nhs_17 的先后由排版保证。
+         改这一段之前请先读 verify_mod.py 第 19 节：它同时静态查 LoadOrder、并回查
+         游戏真实建出的 DebugGameplay.sqlite 里的克隆层条数。 -->
+
+    <UpdateDatabase id="NHS_DB_CORE">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_01_core.sql</File>
+    </UpdateDatabase>
+    <UpdateDatabase id="NHS_DB_ADVANCED">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_02_advanced.sql</File>
+    </UpdateDatabase>
+    <!-- 【v7.3】本地化必须走 UpdateText + XML，不能用 UpdateDatabase + SQL：
+         UpdateDatabase 作用在 Gameplay 库，该库没有 LocalizedText 表，
+         INSERT 会报 "no such table: LocalizedText" 并静默失败，
+         结果特征界面直接显示 LOC_TRAIT_NHS_* 原始 tag。 -->
+    <UpdateText id="NHS_TEXT">
+      <File>text/nhs_text.xml</File>
+    </UpdateText>
+    <UpdateDatabase id="NHS_DB_MOTHER_RUSSIA">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_04_mother_russia.sql</File>
+    </UpdateDatabase>
+    <UpdateDatabase id="NHS_DB_MONASTERIES">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_05_monasteries.sql</File>
+    </UpdateDatabase>
+    <UpdateDatabase id="NHS_DB_BELIEFS">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_06_beliefs.sql</File>
+    </UpdateDatabase>
+    <UpdateDatabase id="NHS_DB_MOVEMENT">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_07_movement.sql</File>
+    </UpdateDatabase>
+    <UpdateDatabase id="NHS_DB_WONDER_BOOST">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_08_wonder_boost.sql</File>
+    </UpdateDatabase>
+    <!-- 隔离层：改的是原版 UnitCommands 全局表，失败不影响以上各层 -->
+    <UpdateDatabase id="NHS_DB_WONDER_ERA">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_09_wonder_era.sql</File>
+    </UpdateDatabase>
+    <!-- 外观层：替换中国城名为秦三十六郡（纯文案，不改数值） -->
+    <UpdateDatabase id="NHS_DB_CITY_NAMES">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_10_city_names.sql</File>
+    </UpdateDatabase>
+    <!-- 第七层：驰道（新建城市自动连通首都道路，克隆原版罗马特性机制） -->
+    <UpdateDatabase id="NHS_DB_ROADS">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_11_roads.sql</File>
+    </UpdateDatabase>
+    <!-- 第八层：法令一统（开局 +1 通配符政策槽，克隆原版希腊特性机制） -->
+    <UpdateDatabase id="NHS_DB_EDICTS">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_12_edicts.sql</File>
+    </UpdateDatabase>
+    <!-- 第九层：宜居度（人口加速带来的缺口，见文件头根因分析） -->
+    <UpdateDatabase id="NHS_DB_AMENITIES">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_13_amenities.sql</File>
+    </UpdateDatabase>
+    <UpdateDatabase id="NHS_DB_UNITS">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_14_units.sql</File>
+    </UpdateDatabase>
+    <!-- 出生地关联（v7.25）：中国开局偏向冻土/平原 + 靠河。
+         走 StartBiasTerrains / StartBiasRivers 两张原版表，由地图生成期的
+         AssignStartingPlots.lua 读取；**只在开新局时生效**，读档不重新分配。
+         注意：该表主键只有 CivilizationType，无法按领袖限定。 -->
+    <UpdateDatabase id="NHS_DB_START_BIAS">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_15_start_bias.sql</File>
+    </UpdateDatabase>
+    <!-- 平衡旋钮（v7.28）：前期补启动速度、后期砍乘数。
+         必须排在 BELIEFS 之后：其中一条是 UPDATE 已克隆出来的经文参数行
+         (NHS_PL_SCRIPTURE_DISTRICTFAITH)，克隆体没生成时 UPDATE 命中 0 行且不报错。
+         v7.28 同时把 nhs_09 的奇观加速时代上限由 9 收到 3（到中世纪）。 -->
+    <UpdateDatabase id="NHS_DB_TUNING">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_16_tuning.sql</File>
+    </UpdateDatabase>
+    <!-- 冻土农场（v7.30）：克隆加拿大劳雷尔特性 TRAIT_LEADER_LAST_BEST_WEST。
+         必须排在 NHS_DB_MOTHER_RUSSIA 之后——本文件把克隆体挂到
+         TRAIT_NHS_MOTHER_RUSSIA（披荆斩棘），那个 Trait 是 nhs_04 建的。 -->
+    <UpdateDatabase id="NHS_DB_LAST_BEST_WEST">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_17_last_best_west.sql</File>
+    </UpdateDatabase>
+    <!-- 帝国规模（v46）：科技随人口膨胀的抑制层。
+         三档**负百分比**科研折扣（−10% / 人口≥10 累计 −22% / 人口≥16 累计 −30%），
+         v46 从 −18/−20/−15（累计 −53%）调轻：t150 实测 −53% 压到 1.03 倍（与 AI 完全持平），
+         而折扣在 16 人口封顶，之后人类增长只拿 47% 收益、AI 拿 100%，按该斜率会被反超；
+         −30% 换算为 1.26 倍，是「明显领先但不碾压」。
+         只对人类秦始皇生效，机制与巴比伦 TRAIT_SCIENCE_DECREASE 同形同 effect。
+         ★ v37/v38/v40 三轮「零效果」的真实原因是**都在老存档上测**：
+           Civ6 建局时把玩家已挂载的 modifier 集合写进存档，之后新增的 SQL 只进
+           游戏库、不追溯（v41 把三条改成 +20 正值，逐城科研一分未动即为铁证）。
+           所以本层必须**新开一局**验证，详见 nhs_18 文件头。
+         依赖只有原版 PLAYER_IS_HUMAN 与 nhs_01 建的 TRAIT_NHS_NUCLEAR_HOLY_SITE，
+         不依赖任何克隆层，所以放最后没有顺序问题。 -->
+    <UpdateDatabase id="NHS_DB_TECH_SCALING">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>sql/nhs_18_tech_scaling.sql</File>
+    </UpdateDatabase>
+    <!-- 奇观监听（v7.17）：给他国开建世界奇观发通知。
+         必须走 AddGameplayScripts，不能用 UpdateDatabase：
+           · 通知 API NotificationManager.SendNotification 只在脚本层可用
+           · 「AI 在建什么」没有对应事件，只能轮询城市生产队列 -->
+    <UpdateDatabase id="NHS_DB_NOTIFICATIONS">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <File>data/nhs_notifications.xml</File>
+    </UpdateDatabase>
+    <AddGameplayScripts id="NHS_WONDER_WATCH">
+      <File>lua/nhs_wonder_watch.lua</File>
+    </AddGameplayScripts>
+    <!-- 实机诊断（v45）：只读脚本。规模层三档已全部实测通过
+         （咸阳 pop9→10：11.23→8.68 = −38%；pop15→16：9.61→7.40 = −53%），
+         所以它现在的用途变了：**中期平衡观测**——人类与每个 AI 的科研总量倍数。
+         机制已验收但平衡未定（t82 人类只有最强 AI 的 60%，中期是否会反超过头仍需看），
+         所以本动作块暂时保留；平衡定稿后再删。 -->
+    <AddGameplayScripts id="NHS_SCRIPT">
+      <File>lua/nhs_info.lua</File>
+    </AddGameplayScripts>
+    <!-- 图标（v7.19）：通知槽补图 + 锐士/斥候的图标名映射。
+         全部复用游戏自带图集，不再自带 DDS，因此**没有** <ImportFiles>：
+         原版贴图本来就已导入，我们只增加「名字 → 原版格子」的映射行。 -->
+    <UpdateIcons id="NHS_ICONS">
+      <File>data/nhs_icons.xml</File>
+    </UpdateIcons>
+  </InGameActions>
+  <!-- 关键：显式登记全部文件。游戏自带 42 个 modinfo 全部带此节点；
+       缺失会导致 mod 出现在列表、GUID 进存档，但 SQL 文件不被读取执行 -->
+  <Files>
+    <File>sql/nhs_01_core.sql</File>
+    <File>sql/nhs_02_advanced.sql</File>
+    <File>text/nhs_text.xml</File>
+    <File>sql/nhs_04_mother_russia.sql</File>
+    <File>sql/nhs_05_monasteries.sql</File>
+    <File>sql/nhs_06_beliefs.sql</File>
+    <File>sql/nhs_07_movement.sql</File>
+    <File>sql/nhs_08_wonder_boost.sql</File>
+    <File>sql/nhs_09_wonder_era.sql</File>
+    <File>sql/nhs_10_city_names.sql</File>
+    <File>sql/nhs_11_roads.sql</File>
+    <File>sql/nhs_12_edicts.sql</File>
+    <File>sql/nhs_13_amenities.sql</File>
+    <File>sql/nhs_14_units.sql</File>
+    <File>sql/nhs_15_start_bias.sql</File>
+    <File>sql/nhs_16_tuning.sql</File>
+    <File>sql/nhs_17_last_best_west.sql</File>
+    <File>sql/nhs_18_tech_scaling.sql</File>
+    <File>lua/nhs_info.lua</File>
+    <File>lua/nhs_wonder_watch.lua</File>
+    <File>data/nhs_icons.xml</File>
+    <File>data/nhs_notifications.xml</File>
+  </Files>
+</Mod>

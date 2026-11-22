@@ -1,0 +1,95 @@
+-- ============================================================================
+-- 核动力圣地 · 进阶层 (nhs_02_advanced.sql) —— 【需实机核对】
+-- 游戏数值平衡专家 设计产物
+--
+-- ⚠ 重要诚实声明 ⚠
+-- 本文件实现"半价圣地"与"相邻信仰翻倍"，这两条的底层 Effect/Modifier ID
+-- 无法在当前环境访问游戏数据库验证。下面给出的是社区通用写法，属于
+-- 【候选实现 / 待验证】，不是"已确认能跑"的代码。
+--
+-- 核对方法（必做，见 README 第 4 节）：
+--   1) 用 SQLiteSpy 打开 DebugGameplay.sqlite
+--   2) 查表确认下方引用的 ModifierType / EffectType / RequirementType 是否存在
+--   3) 若不存在，按 README 的兜底方案处理（删掉对应行，核心层仍可独立工作）
+--
+-- 设计取舍：核心层 (nhs_01_core.sql) 已经提供稳定的平衡收益；本层是锦上添花，
+-- 即使整层禁用，mod 依然达成"帮助新手、不超模"的目标。
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- A. 半价圣地：拉夫拉特征（俄罗斯）折算为"区域产能消耗 -50%"
+--    【v7.3 禁用】原写法用的 EFFECT_ADJUST_DISTRICT_COST 在本版本不存在
+--    （Types 表查无此行），会触发外键校验失败 → 整 mod 加载失败弹窗。
+--    游戏里唯一语义相近的真实 Effect 是 EFFECT_ADJUST_ALL_DISTRICTS_PRODUCTION，
+--    但它的 Amount 是"区域产能产出百分比"（努比亚 +25% 是加速），填 -50 会变成
+--    "圣地造得慢一倍"，是负收益，不能拿来冒充"成本减半"。
+--    本段本就是"候选实现/待核对"的锦上添花层，核心层不依赖它。
+--    因此先整段禁用，保证 mod 能加载；待实机确认真正的"区域成本"写法后再启用。
+--    【如需恢复】别直接取消注释——必须先用 SQLiteSpy 在 DebugGameplay.sqlite
+--    里查到真实存在的 Effect/参数，否则会重现本次的加载失败。
+-- ---------------------------------------------------------------------------
+-- INSERT OR IGNORE INTO Types (Type, Kind) VALUES
+--   ('NHS_MOD_DISTRICT_COST', 'KIND_MODIFIER');
+-- INSERT OR IGNORE INTO DynamicModifiers (ModifierType, CollectionType, EffectType) VALUES
+--   ('NHS_MOD_DISTRICT_COST', 'COLLECTION_PLAYER_DISTRICTS', 'EFFECT_ADJUST_DISTRICT_COST');
+-- INSERT INTO Modifiers (ModifierId, ModifierType, OwnerRequirementSetId, SubjectRequirementSetId) VALUES
+--   ('NHS_HOLY_SITE_HALF_COST', 'NHS_MOD_DISTRICT_COST', 'PLAYER_IS_HUMAN', 'NHS_REQSET_CITY_HAS_HOLY_SITE');
+-- INSERT INTO ModifierArguments (ModifierId, Name, Value) VALUES
+--   ('NHS_HOLY_SITE_HALF_COST', 'DistrictType', 'DISTRICT_HOLY_SITE'),
+--   ('NHS_HOLY_SITE_HALF_COST', 'Amount', '-50');
+-- INSERT INTO TraitModifiers (TraitType, ModifierId) VALUES
+--   ('TRAIT_NHS_NUCLEAR_HOLY_SITE', 'NHS_HOLY_SITE_HALF_COST');
+
+-- ---------------------------------------------------------------------------
+-- B. 内置"经文"：圣地相邻信仰 +100%（把玩家要挂的政策卡效果内置给新手）
+--    【高风险·默认关闭】依赖 REQUIREMENT_DISTRICT_IS_HOLY_SITE 与
+--    EFFECT_ADJUST_DISTRICT_YIELD_CHANGE 的确切参数名，无法静态确认。
+--    下面整段用注释包裹；确认 ID 后再取消注释启用。
+--    不启用也不会破坏核心层——这正是分层设计的意义。
+-- ---------------------------------------------------------------------------
+-- INSERT INTO Requirements (RequirementId, RequirementType) VALUES
+--   ('NHS_REQ_DISTRICT_HOLY_SITE', 'REQUIREMENT_DISTRICT_TYPE_MATCHES');
+-- INSERT INTO RequirementArguments (RequirementId, Name, Value) VALUES
+--   ('NHS_REQ_DISTRICT_HOLY_SITE', 'DistrictType', 'DISTRICT_HOLY_SITE');
+-- INSERT INTO RequirementSets (RequirementSetId, RequirementSetType) VALUES
+--   ('NHS_REQSET_DISTRICT_HOLY_SITE', 'REQUIREMENTSET_TEST_ALL');
+-- INSERT INTO RequirementSetRequirements (RequirementSetId, RequirementId) VALUES
+--   ('NHS_REQSET_DISTRICT_HOLY_SITE', 'NHS_REQ_DISTRICT_HOLY_SITE');
+-- INSERT INTO Modifiers (ModifierId, ModifierType, OwnerRequirementSetId, SubjectRequirementSetId) VALUES
+--   ('NHS_HOLY_SITE_ADJ_DOUBLE', 'MODIFIER_PLAYER_DISTRICTS_ADJUST_YIELD_CHANGE',
+--    'PLAYER_IS_HUMAN', 'NHS_REQSET_DISTRICT_HOLY_SITE');
+-- INSERT INTO ModifierArguments (ModifierId, Name, Value) VALUES
+--   ('NHS_HOLY_SITE_ADJ_DOUBLE', 'YieldType', 'YIELD_FAITH'),
+--   ('NHS_HOLY_SITE_ADJ_DOUBLE', 'Amount', '2');
+-- INSERT INTO TraitModifiers (TraitType, ModifierId) VALUES
+--   ('TRAIT_NHS_NUCLEAR_HOLY_SITE', 'NHS_HOLY_SITE_ADJ_DOUBLE');
+
+-- ---------------------------------------------------------------------------
+-- C. 后期缩放层【可选·默认关闭·需核对】
+--
+-- 为什么需要它：核心层的固定加成（+5 产能）是线性的，而神级 AI 的产能按时代
+-- 翻倍。模型A 显示新手产能比会从远古 1.07 衰减到现代 0.53 —— 前期护盘，后期掉队。
+-- 这段用「城市产出百分比加成」补后期：百分比会随城市基数自动放大，不会被时代稀释。
+--
+-- 为什么默认注释：EffectType 名称（EFFECT_ADJUST_CITY_YIELD_MODIFIER）无法在当前
+-- 环境离线确认，可能是别的写法。确认存在后再取消注释，否则会让整段 SQL 报错。
+--
+-- 核对方法：SQLiteSpy 打开 DebugGameplay.sqlite，执行
+--   SELECT * FROM DynamicModifiers WHERE EffectType LIKE '%YIELD_MODIFIER%';
+--   若有 EFFECT_ADJUST_CITY_YIELD_MODIFIER，本段可用。
+-- ---------------------------------------------------------------------------
+-- INSERT OR IGNORE INTO DynamicModifiers (ModifierType, CollectionType, EffectType) VALUES
+--   ('NHS_MOD_CITY_YIELD_PCT', 'COLLECTION_PLAYER_CITIES', 'EFFECT_ADJUST_CITY_YIELD_MODIFIER');
+--
+-- INSERT INTO Modifiers (ModifierId, ModifierType, OwnerRequirementSetId, SubjectRequirementSetId) VALUES
+--   ('NHS_CITY_PROD_PCT', 'NHS_MOD_CITY_YIELD_PCT', 'PLAYER_IS_HUMAN', 'NHS_REQSET_CITY_HAS_HOLY_SITE');
+-- INSERT INTO ModifierArguments (ModifierId, Name, Value) VALUES
+--   ('NHS_CITY_PROD_PCT', 'YieldType', 'YIELD_PRODUCTION'),
+--   ('NHS_CITY_PROD_PCT', 'Amount', '15');
+--
+-- INSERT INTO TraitModifiers (TraitType, ModifierId) VALUES
+--   ('TRAIT_NHS_NUCLEAR_HOLY_SITE', 'NHS_CITY_PROD_PCT');
+--
+-- 建议值：15（模型推算可把现代产能比从 0.53 拉回约 0.78）。
+-- 红线：不要超过 25，否则熟练玩家后期会直接超模（0.69 × 1.25 ≈ 0.86 只是账面，
+--       实际因为乘算叠加其他加成，实测会更高）。

@@ -1,0 +1,230 @@
+{
+  "deity": {
+    "sci_cul_faith": 0.4,
+    "prod_gold": 1.0,
+    "combat": 4,
+    "xp": 0.5,
+    "boosts": 4,
+    "settlers": 3,
+    "warriors": 5,
+    "builders": 2
+  },
+  "mother_russia": {
+    "per_tile_prod": 1.0,
+    "per_tile_faith": 1.0,
+    "extra_tiles": 8
+  },
+  "tundra_tiles": {
+    "0": 3,
+    "1": 4,
+    "2": 6,
+    "3": 7,
+    "4": 8,
+    "5": 9
+  },
+  "tundra_food_drag": 0.5,
+  "scripture": 2.0,
+  "selected_core_prod": 5,
+  "configs": {
+    "4": {
+      "远古": {
+        "novice_tundra_prod": 0.984,
+        "novice_tundra_food": 1.062,
+        "novice_plain_prod": 0.734,
+        "skilled_tundra_prod": 1.151,
+        "prod_p10": 11.81,
+        "prod_p90": 11.81
+      },
+      "古典": {
+        "novice_tundra_prod": 0.823,
+        "novice_tundra_food": 0.9,
+        "novice_plain_prod": 0.601,
+        "skilled_tundra_prod": 0.989,
+        "prod_p10": 14.81,
+        "prod_p90": 14.81
+      },
+      "中古": {
+        "novice_tundra_prod": 0.679,
+        "novice_tundra_food": 0.75,
+        "novice_plain_prod": 0.464,
+        "skilled_tundra_prod": 0.857,
+        "prod_p10": 19.0,
+        "prod_p90": 19.0
+      },
+      "文艺复兴": {
+        "novice_tundra_prod": 0.6,
+        "novice_tundra_food": 0.731,
+        "novice_plain_prod": 0.425,
+        "skilled_tundra_prod": 0.775,
+        "prod_p10": 24.0,
+        "prod_p90": 24.0
+      },
+      "工业": {
+        "novice_tundra_prod": 0.536,
+        "novice_tundra_food": 0.714,
+        "novice_plain_prod": 0.393,
+        "skilled_tundra_prod": 0.714,
+        "prod_p10": 30.0,
+        "prod_p90": 30.0
+      },
+      "现代": {
+        "novice_tundra_prod": 0.514,
+        "novice_tundra_food": 0.679,
+        "novice_plain_prod": 0.389,
+        "skilled_tundra_prod": 0.681,
+        "prod_p10": 37.0,
+        "prod_p90": 37.0
+      }
+    },
+    "5": {
+      "远古": {
+        "novice_tundra_prod": 1.068,
+        "novice_tundra_food": 1.062,
+        "novice_plain_prod": 0.818,
+        "skilled_tundra_prod": 1.234,
+        "prod_p10": 12.81,
+        "prod_p90": 12.81
+      },
+      "古典": {
+        "novice_tundra_prod": 0.878,
+        "novice_tundra_food": 0.9,
+        "novice_plain_prod": 0.656,
+        "skilled_tundra_prod": 1.045,
+        "prod_p10": 15.81,
+        "prod_p90": 15.81
+      },
+      "中古": {
+        "novice_tundra_prod": 0.714,
+        "novice_tundra_food": 0.75,
+        "novice_plain_prod": 0.5,
+        "skilled_tundra_prod": 0.893,
+        "prod_p10": 20.0,
+        "prod_p90": 20.0
+      },
+      "文艺复兴": {
+        "novice_tundra_prod": 0.625,
+        "novice_tundra_food": 0.731,
+        "novice_plain_prod": 0.45,
+        "skilled_tundra_prod": 0.8,
+        "prod_p10": 25.0,
+        "prod_p90": 25.0
+      },
+      "工业": {
+        "novice_tundra_prod": 0.554,
+        "novice_tundra_food": 0.714,
+        "novice_plain_prod": 0.411,
+        "skilled_tundra_prod": 0.732,
+        "prod_p10": 31.0,
+        "prod_p90": 31.0
+      },
+      "现代": {
+        "novice_tundra_prod": 0.528,
+        "novice_tundra_food": 0.679,
+        "novice_plain_prod": 0.403,
+        "skilled_tundra_prod": 0.694,
+        "prod_p10": 38.0,
+        "prod_p90": 38.0
+      }
+    },
+    "6": {
+      "远古": {
+        "novice_tundra_prod": 1.151,
+        "novice_tundra_food": 1.062,
+        "novice_plain_prod": 0.901,
+        "skilled_tundra_prod": 1.318,
+        "prod_p10": 13.81,
+        "prod_p90": 13.81
+      },
+      "古典": {
+        "novice_tundra_prod": 0.934,
+        "novice_tundra_food": 0.9,
+        "novice_plain_prod": 0.712,
+        "skilled_tundra_prod": 1.101,
+        "prod_p10": 16.81,
+        "prod_p90": 16.81
+      },
+      "中古": {
+        "novice_tundra_prod": 0.75,
+        "novice_tundra_food": 0.75,
+        "novice_plain_prod": 0.536,
+        "skilled_tundra_prod": 0.929,
+        "prod_p10": 21.0,
+        "prod_p90": 21.0
+      },
+      "文艺复兴": {
+        "novice_tundra_prod": 0.65,
+        "novice_tundra_food": 0.731,
+        "novice_plain_prod": 0.475,
+        "skilled_tundra_prod": 0.825,
+        "prod_p10": 26.0,
+        "prod_p90": 26.0
+      },
+      "工业": {
+        "novice_tundra_prod": 0.571,
+        "novice_tundra_food": 0.714,
+        "novice_plain_prod": 0.429,
+        "skilled_tundra_prod": 0.75,
+        "prod_p10": 32.0,
+        "prod_p90": 32.0
+      },
+      "现代": {
+        "novice_tundra_prod": 0.542,
+        "novice_tundra_food": 0.679,
+        "novice_plain_prod": 0.417,
+        "skilled_tundra_prod": 0.708,
+        "prod_p10": 39.0,
+        "prod_p90": 39.0
+      }
+    },
+    "7": {
+      "远古": {
+        "novice_tundra_prod": 1.234,
+        "novice_tundra_food": 1.062,
+        "novice_plain_prod": 0.984,
+        "skilled_tundra_prod": 1.401,
+        "prod_p10": 14.81,
+        "prod_p90": 14.81
+      },
+      "古典": {
+        "novice_tundra_prod": 0.989,
+        "novice_tundra_food": 0.9,
+        "novice_plain_prod": 0.767,
+        "skilled_tundra_prod": 1.156,
+        "prod_p10": 17.81,
+        "prod_p90": 17.81
+      },
+      "中古": {
+        "novice_tundra_prod": 0.786,
+        "novice_tundra_food": 0.75,
+        "novice_plain_prod": 0.571,
+        "skilled_tundra_prod": 0.964,
+        "prod_p10": 22.0,
+        "prod_p90": 22.0
+      },
+      "文艺复兴": {
+        "novice_tundra_prod": 0.675,
+        "novice_tundra_food": 0.731,
+        "novice_plain_prod": 0.5,
+        "skilled_tundra_prod": 0.85,
+        "prod_p10": 27.0,
+        "prod_p90": 27.0
+      },
+      "工业": {
+        "novice_tundra_prod": 0.589,
+        "novice_tundra_food": 0.714,
+        "novice_plain_prod": 0.446,
+        "skilled_tundra_prod": 0.768,
+        "prod_p10": 33.0,
+        "prod_p90": 33.0
+      },
+      "现代": {
+        "novice_tundra_prod": 0.556,
+        "novice_tundra_food": 0.679,
+        "novice_plain_prod": 0.431,
+        "skilled_tundra_prod": 0.722,
+        "prod_p10": 40.0,
+        "prod_p90": 40.0
+      }
+    }
+  }
+}
