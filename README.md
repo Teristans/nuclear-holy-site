@@ -17,7 +17,7 @@
 ### 玩家：装进游戏用
 
 ```bash
-git clone https://github.com/<账号>/nuclear-holy-site.git
+git clone https://github.com/Teristans/nuclear-holy-site.git
 cd nuclear-holy-site
 python install.py
 ```

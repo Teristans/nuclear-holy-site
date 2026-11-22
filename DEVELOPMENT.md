@@ -8,7 +8,7 @@
 ## 0. 三十秒版本
 
 ```bash
-git clone https://github.com/<账号>/nuclear-holy-site.git
+git clone https://github.com/Teristans/nuclear-holy-site.git
 cd nuclear-holy-site
 set CIV6_DIR=D:\SteamLibrary\steamapps\common\Sid Meier's Civilization VI
 python build_game_db.py      # 重建 30MB 验证库（不入库，必须自己生成）
