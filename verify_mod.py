@@ -1302,6 +1302,31 @@ else:
         err("[平衡] NHS_CAPITAL_PROD.Amount = %s，v7.29 应为 2；"
             "只改文案不改这里等于没改" % _m_prod.group(1))
 
+    # v48：首都 +3 金币（前期经济补偿）。三道检查缺一不可：
+    #   ① 文案中英都写了 +3（数值改了但说明没改属同类静默错误）
+    #   ② SQL 里 Amount 真的是 3（防止只改了注释）
+    #   ③ 这条必须挂 PLAYER_IS_HUMAN —— 否则 AI 首都一起吃，等于给神级 AI 送钱
+    if "+3 金币" in _txt or "+3 Gold" in _txt:
+        info("[平衡] 首都新增金币已写入文案（+3）")
+    else:
+        err("[平衡] 首都 +3 金币未写入文案；v48 新增旋钮，说明必须同步")
+    _m_gold = re.search(r"NHS_CAPITAL_GOLD'\s*,\s*'Amount'\s*,\s*'(-?\d+)'", _tune)
+    if _m_gold is None:
+        err("[平衡] nhs_16 里找不到 NHS_CAPITAL_GOLD 的 Amount 参数行")
+    elif _m_gold.group(1) == "3":
+        info("[平衡] NHS_CAPITAL_GOLD.Amount = 3（v48 值）")
+    else:
+        err("[平衡] NHS_CAPITAL_GOLD.Amount = %s，v48 应为 3；"
+            "只改文案不改这里等于没改" % _m_gold.group(1))
+    _gold_owner = re.search(r"NHS_CAPITAL_GOLD'\s*,\s*'[^']*'\s*,\s*'([^']+)'", _tune)
+    if _gold_owner and _gold_owner.group(1) == "PLAYER_IS_HUMAN":
+        info("[平衡] NHS_CAPITAL_GOLD 门槛 = PLAYER_IS_HUMAN（AI 拿不到）")
+    elif _gold_owner:
+        err("[平衡] NHS_CAPITAL_GOLD 门槛 = %s，应为 PLAYER_IS_HUMAN；"
+            "否则 AI 首都也会 +3 金" % _gold_owner.group(1))
+    else:
+        err("[平衡] nhs_16 里找不到 NHS_CAPITAL_GOLD 的 Modifiers 行")
+
 # ---------- 16b. 剔除「每信徒 +1 产能」（v33）----------
 #   这条不是"调数值"，而是"删掉一整条乘数轴"，所以要比对两处：
 #     ① nhs_06 的克隆语句必须显式排除 WORK_ETHIC_FOLLOWER_PRODUCTION（源头）

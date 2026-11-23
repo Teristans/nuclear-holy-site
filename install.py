@@ -30,6 +30,13 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "mod")
 TARGET_NAME = "NuclearHolySite"
 GAME_EXE = "CivilizationVI.exe"
+# 【v48 修复】Civ6 有三个可执行文件：CivilizationVI.exe（DX11/默认）、
+# CivilizationVI_DX12.exe、CivilizationVI_DX11.exe。原来只按 "CivilizationVI.exe"
+# 精确匹配 tasklist，DX12 玩家（本项目实机就是 DX12）永远检测不到 ——
+# 于是「边跑边装」被放行，装完游戏读的还是旧 SQL，白折腾一轮。
+# 现在按前缀扫全部进程名的第一列，三种都拦得住。
+GAME_EXE_PREFIX = "civilizationvi"
+GAME_EXE_HINT = "CivilizationVI.exe / CivilizationVI_DX12.exe / CivilizationVI_DX11.exe"
 
 
 def sha256(path):
@@ -86,12 +93,15 @@ def game_running():
         # tasklist 的输出是系统 ANSI 代码页（中文 Windows 是 cp936），
         # 用 text=True 会让 Python 按 UTF-8 解码并在 reader 线程里抛
         # UnicodeDecodeError —— 所以这里收 bytes 自己解。
-        r = subprocess.run(
-            ["tasklist", "/FI", "IMAGENAME eq " + GAME_EXE, "/NH"],
-            capture_output=True, timeout=15,
-        )
+        #
+        # 不加 /FI：tasklist 的过滤器不支持通配符，"eq CivilizationVI*.exe"
+        # 会直接报「没有运行的任务」。列全部再按前缀匹配才是可靠做法。
+        r = subprocess.run(["tasklist", "/NH"], capture_output=True, timeout=25)
         out = (r.stdout or b"").decode("gbk", "ignore")
-        return GAME_EXE.lower() in out.lower()
+        for line in out.splitlines():
+            if line.lower().lstrip().startswith(GAME_EXE_PREFIX):
+                return True
+        return False
     except Exception:
         return False  # 查不到就不拦，只提示
 
@@ -100,6 +110,8 @@ def main():
     ap = argparse.ArgumentParser(description="安装 Nuclear Holy Site 到文明6 Mods 目录")
     ap.add_argument("--mods", help="Mods 目录的绝对路径（不填则自动探测）")
     ap.add_argument("--dry-run", action="store_true", help="只打印计划，不写盘")
+    ap.add_argument("--force", action="store_true",
+                    help="游戏在跑也照装（装完必须下次启动进程才生效，当前这局不会变化）")
     args = ap.parse_args()
 
     if not os.path.isdir(SRC):
@@ -134,11 +146,17 @@ def main():
     print("目标目录 : %s（%s）" % (dest, how))
 
     if game_running():
+        if not args.force:
+            print()
+            print("[✗] 检测到文明6 进程正在运行（%s）。" % GAME_EXE_HINT)
+            print("    Civ6 只在进程启动时解析一次 modinfo，边跑边装等于没装。")
+            print("    请**完全退出游戏进程**（不是回主菜单）后重新运行本脚本；")
+            print("    或加 --force 先把文件装进去（下次启动才生效，当前这局不会变化）。")
+            return 1
         print()
-        print("[✗] 检测到 %s 正在运行。" % GAME_EXE)
-        print("    Civ6 只在进程启动时解析一次 modinfo，边跑边装等于没装。")
-        print("    请**完全退出游戏进程**（不是回主菜单）后重新运行本脚本。")
-        return 1
+        print("[!] 游戏正在运行，按 --force 继续安装。")
+        print("    文件会被写入，但要**下次启动进程**才会被读取；")
+        print("    当前正在玩的这一局不受影响（新增 Modifier 不追溯存档）。")
 
     # 计划
     plan_new, plan_upd, plan_same = [], [], []

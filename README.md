@@ -10,10 +10,11 @@
 
 ## 快速开始
 
-> **当前版本 v47**（`.modinfo` 里 `version="47"`，游戏标题栏会显示）。
+> **当前版本 v48**（`.modinfo` 里 `version="48"`，游戏标题栏会显示）。
 > 机制层（八威仪 + 科技规模三档）已在实机逐档验收；**平衡目标（人类科研约为最强 AI 的
 > 1.2~1.4 倍）尚未实测确认**，状态与待办见 [DEVELOPMENT.md](DEVELOPMENT.md)。
 > v47 新增：科技规模三档只从**古典时代**起生效，远古时代整层豁免。
+> v48 新增：首都每回合 **+3 金币**（前期经济补偿，只加首都所以后期自动稀释）。
 
 ### 玩家：装进游戏用
 
@@ -26,14 +27,15 @@ python install.py
 `install.py` 做四件事：从注册表读出你**真实的「文档」路径**（很多人的文档被重定向到 D 盘，
 硬编码 `%USERPROFILE%\Documents` 会装错地方）→ 把 `mod/` 复制到
 `<文档>\My Games\Sid Meier's Civilization VI\Mods\NuclearHolySite\` → 逐文件 sha256 复核 →
-检查 `CivilizationVI.exe` 是否在跑（在跑会直接拒绝，因为 Civ6 只在进程启动时解析一次 modinfo）。
+检查文明6 进程是否在跑（`CivilizationVI.exe` / `_DX12` / `_DX11` 三种都拦，在跑会直接拒绝，
+因为 Civ6 只在进程启动时解析一次 modinfo）。
 
 不想用 git：GitHub 页面 → **Code → Download ZIP** → 解压 → 在解压目录里
 `python install.py --mods "<你的 Mods 目录>"`。只想要 mod 文件本体的话，`mod/` 整个文件夹
 直接改名成 `NuclearHolySite` 丢进 Mods 目录也能用，只是少了自动校验。
 
 装完：**完全退出游戏进程**（不是回主菜单）→ 启动 →「额外内容」里确认
-**「皇帝之威 · Majesty of the First Emperor（v47）」**已启用 → **新开一局** → 必须选**中国·秦始皇**。
+**「皇帝之威 · Majesty of the First Emperor（v48）」**已启用 → **新开一局** → 必须选**中国·秦始皇**。
 
 卸载：删掉 `Mods\NuclearHolySite\` 整个文件夹，无残留。
 
@@ -422,7 +424,7 @@ mod/                          # ← 整个文件夹就是 mod 本体，可直接
     nhs_13_amenities.sql       # 宜居度阶梯（5/9/13 城）
     nhs_14_units.sql           # 锐士 / 斥候（单位替换）
     nhs_15_start_bias.sql      # 出生地偏冻土+河（按文明，非按领袖）
-    nhs_16_tuning.sql          # 调参旋钮：首都食物/产能、经文比例
+    nhs_16_tuning.sql          # 调参旋钮：首都食物/产能/金币、经文比例
     nhs_17_last_best_west.sql  # 冻土农场 / 营地 / 矿场 / 伐木场加成
     nhs_18_tech_scaling.sql    # ★ 帝国规模：科研按人口分三档打折（v47 现行 −30%，仅古典及以后）
   text/nhs_text.xml            # 全部本地化（走 UpdateText 通道，不在 SQL 里）
@@ -540,6 +542,7 @@ D:\My Documents\My Games\Sid Meier's Civilization VI\Mods\NuclearHolySite\
 | **嫌远古扣得太狠** | v47 已经把远古整层豁免了。若还想再放宽，改 `nhs_18` 第 1b 节的 `EraType`（现为 `ERA_CLASSICAL`，可改 `ERA_MEDIEVAL` 等） |
 | **想让远古也吃折扣（回到 v46）** | 三条 Modifier 的 `OwnerRequirementSetId` 从 `'NHS_REQS_HUMAN_POST_ANCIENT'` 改回 `'PLAYER_IS_HUMAN'`；第 1b 节的 INSERT 留着不影响 |
 | **只压超大城** | 把 `nhs_18` 第 2 节的 `Amount` 调小（如 −8），第 1 节不动；或把 L2 的人口门槛 10 改成 13 |
+| **前期经济太紧（买不起地、现金流贴 0）** | `nhs_16_tuning.sql` 三b 节 `NHS_CAPITAL_GOLD` 的 `Amount`（现 `'3'`）。改 `'5'` = 与宫殿等量；不建议超过 5。<br>**不要**改成「每座有圣地的城 +1 金」——那会随城市数线性增长，后期白送 11~14 金/回合，与「只帮前期」正好相反。<br>同步 `run_mod_sql.py` 的 `_tune` 表、`verify_mod.py` 的金币断言、`nhs_text.xml` 与 modinfo 文案。<br>**这是新增 Modifier：必须完全退出进程 → 重启 → 新开一局才生效，老存档不追溯。** |
 | **移民别那么快** | `nhs_07` 的 `NHS_SETTLER_MOVEMENT` Amount 改 1 或 0 |
 | **让忽必烈也能用** | 各文件里 `'LEADER_QIN'` 那行再加一条 `'LEADER_KUBLAI_KHAN'` |
 | **恢复成"所有文明都能用"** | 把 6 处 `LeaderTraits` 改回 `CivilizationTraits`（不推荐，会把 2.9 的泄漏放大到所有 AI 秦始皇） |

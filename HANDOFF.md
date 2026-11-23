@@ -9,8 +9,10 @@
 ## 0. 一句话现状
 
 **代码和验证都做完了，缺的只有"实机跑一局"。**
-v7.38 的 17 个 SQL 文件已在真实游戏库结构上全部执行通过，`run_mod_sql.py` 201 条落地断言全绿、`verify_mod.py` 243 条静态检查 0 错 2 警告（1 条刻意保留 + 1 条"该重启游戏了"）。
-**v38 待实机验证**——v37 已经进过游戏，结论是「零效果」，整个写法被推翻重做（见第 9 节 v7.38）。这件事说明：离线库全绿 + 静态校验全绿，仍然不等于引擎会采纳。
+17 个 SQL 文件已在真实游戏库结构上全部执行通过，`run_mod_sql.py` **210 条**落地断言全绿、
+`verify_mod.py` **254 条**静态检查 **0 错 2 警告**（1 条刻意保留 + 1 条"3 个文件加载过但内容已过期，该重启了"）。
+**v46 数值 / v47 远古豁免 / v48 首都 +3 金，三项都还没在新局里读到读数**——
+它们全是新建行或改挂载口径，老存档一律不追溯（v37~v41 三轮"零效果"就是这么来的）。这件事说明：离线库全绿 + 静态校验全绿，仍然不等于引擎会采纳。
 判据用 `python check_loaded.py`：现在它会列出三类问题——`[缺失]`（从未加载）、`[过期]`（加载过但之后又改了，游戏里跑的是旧内容）、以及 **modinfo 自身过期**（改的若是 LoadOrder，整个建库顺序都还是旧的）。
 
 > **v35 的教训值得先读一遍**（见第 9 节最后一条）：`run_mod_sql.py` 跑在离线合并库上，它只能证明 SQL 正确，**不能证明游戏里执行时源数据已经存在**。本轮 30 条修饰器就是这样丢的——文件全加载、零报错、双校验全绿，游戏库里却少了半套冻土农场。现在 `verify_mod.py` 第 19 节会直接去读游戏建出的 `DebugGameplay.sqlite` 对账。
@@ -717,6 +719,38 @@ python lua_check.py --all-mods      # 全部已启用 mod 的 .lua
   只有前一个读数无法区分「门控生效」与「整层没挂上」。三种失败形态：
     远古 0.90 → 时代 Requirement 没起作用（换成 `REQUIREMENT_GAME_ERA_ATLEAST_EXPANSION` 再试）；
     远古 1.00 且古典 1.00 → 整层没挂上（没重启进程 / 不是新局）。
+
+- **v48（2026-11-23，前期经济补偿）**：实机反馈原话「经济实在太糟糕了，能否前期加一点金币收入」。
+
+  **只加一条新 Modifier**：`nhs_16` 三b 节 `NHS_CAPITAL_GOLD`
+  = `MODIFIER_PLAYER_CAPITAL_CITY_ADJUST_CITY_YIELD_CHANGE` + `YIELD_GOLD` + `Amount=3`，
+  Owner = `PLAYER_IS_HUMAN`，挂 `TRAIT_NHS_NUCLEAR_HOLY_SITE`。
+  与既有「首都 +2 食物 / +2 产能」**同一条 ModifierType**，只换 YieldType，机制零风险。
+  原版同形用例 5 处（数值量级即取自这里）：`GOD_KING_GOLD`=1、`AUTOCRACY_GOLD`=1、
+  `PHARAOH_GOLD`=2、`MINOR_CIV_TRADE_YIELD_FOR_CAPITAL`=4、宫殿 `BUILDING_PALACE` 自身 +5。
+
+  **为什么只给首都、不给「每座有圣地的城 +1 金」**：固定值不随城市数增长，天然只帮前期 ——
+  开局 2 城净收入约 4~6，+3 等于 +50%~75%；11~14 城时净收入 150~205，+3 只占 1.5%~2%。
+  线性轴则相反：t232 那局 11 城会白送 11 金/回合，而本 mod 后期本来就偏强。
+  也**没有**挂 v47 那套时代门槛：固定值自带稀释，没必要；且那套
+  `REQUIREMENT_PLAYER_ERA_AT_LEAST` 组合 Set 尚未实机验证，不该再加第二份依赖。
+
+  **改动范围（5 处 + 1 个 bug 修复）**：
+  ① `nhs_16_tuning.sql`：新增三b 节（机制出处 / 为什么只给首都 / 数值口径 / 旋钮 / 生效条件）；
+     头部旋钮清单「五个」→「六个」；数值口径段与文末速查各加金币一条；
+  ② `nhs_text.xml`：中英文主描述加「+3 金币 / +3 Gold」；
+  ③ `modinfo`：version 47→48、标题、Description、日期；
+  ④ `run_mod_sql.py`：`_tune` 表加 2 条、`for mid in (...)` 名单加 `NHS_CAPITAL_GOLD`；
+  ⑤ `verify_mod.py`：加 3 条（文案中英含 +3、Amount=3、Owner=PLAYER_IS_HUMAN）；
+  ⑥ **`install.py` 真 bug**：进程检测原来按 `CivilizationVI.exe` 精确匹配 tasklist，
+     **DX12 版（`CivilizationVI_DX12.exe`）永远检测不到** —— 边跑边装会被放行，
+     装完游戏读的仍是旧 SQL。现改为列出全部进程、按前缀 `civilizationvi` 匹配，
+     `CivilizationVI.exe` / `_DX12` / `_DX11` 三种都拦得住（已用 `--dry-run` 实测拦住本机 DX12）。
+
+  `run_mod_sql` **0 错**（新增 4 条金币断言全绿）、`verify` **0 错 2 ⚠**
+  （1 条刻意保留的 UnitCommands 全局表警告 + 1 条「3 个文件加载过但内容已过期，该重启了」）。
+  **⚠ 这是新增 Modifier，老存档不追溯**：必须「完全退出进程 → 重启 → 新开一局」；
+  在 t232 那局里看不到 +3 金，不是写错了。
 
 
 

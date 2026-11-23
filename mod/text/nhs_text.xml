@@ -94,7 +94,7 @@
       <Text>Heaven-Sent Swallow</Text>
     </Row>
     <Row Tag="LOC_TRAIT_NHS_DESC">
-      <Text>All your cities gain +1 Amenity. Cities with a Holy Site gain a further +1 Food, +2 Faith, +1 Culture, +2 Housing and +1 Amenity. Your capital gains +1 Faith, +2 Food and +2 Production per turn, and Holy Sites are built 50% faster. Each Farm adjacent to a Holy Site gives that Holy Site +1 Faith. Production is not granted directly - it comes from Diligence converting Holy Site adjacency. Also grants Cleaving Thorns, Four Rivers, Diligence, Enduring Pioneers, The Maker's Name, Imperial Highway and Unified Statutes. Imperial Scale (from the Classical era onward; the Ancient era is fully exempt): all cities suffer -10% Science, cities of 10 or more population suffer -12% more (-22% in total), and cities of 16 or more suffer a further -8% (-30% in total) - so Science no longer scales linearly with population; the larger the city, the heavier the drag.</Text>
+      <Text>All your cities gain +1 Amenity. Cities with a Holy Site gain a further +1 Food, +2 Faith, +1 Culture, +2 Housing and +1 Amenity. Your capital gains +1 Faith, +2 Food, +2 Production and +3 Gold per turn, and Holy Sites are built 50% faster. Each Farm adjacent to a Holy Site gives that Holy Site +1 Faith. Production is not granted directly - it comes from Diligence converting Holy Site adjacency. Also grants Cleaving Thorns, Four Rivers, Diligence, Enduring Pioneers, The Maker's Name, Imperial Highway and Unified Statutes. Imperial Scale (from the Classical era onward; the Ancient era is fully exempt): all cities suffer -10% Science, cities of 10 or more population suffer -12% more (-22% in total), and cities of 16 or more suffer a further -8% (-30% in total) - so Science no longer scales linearly with population; the larger the city, the heavier the drag.</Text>
     </Row>
 
     <Row Tag="LOC_TRAIT_NHS_MR_NAME">
@@ -222,7 +222,7 @@
       <Text>天命玄鸟</Text>
     </Replace>
     <Replace Tag="LOC_TRAIT_NHS_DESC" Language="zh_Hans_CN">
-      <Text>所有城市 +1 宜居度，疆域达 5、9、13 座城时各再 +1 宜居度（合计最多 +5）；拥有圣地的城市再得 +1 食物、+2 信仰、+1 文化、+2 住房、+1 宜居度。首都每回合额外 +1 信仰、+2 食物、+2 产能，圣地建造速度 +50%。圣地每与一处农场相邻再得 +1 信仰。产能不直接发放，由「勤则不匮」按圣地相邻值转化。同时获得披荆斩棘、江河淮济、勤则不匮、筚路蓝缕、物勒工名、驰道通都、法令一统七项能力。另附帝国规模：疆域愈广、人丁愈蕃，则每丁所出之智愈薄——自古典时代始，所有城市科研 −10%，人口十以上的大城再 −12%（累计 −22%），人口十六以上的巨型城再 −8%（累计 −30%）；远古时代不征此税。使科技不再随人口等比膨胀，人口越多抑制越重。</Text>
+      <Text>所有城市 +1 宜居度，疆域达 5、9、13 座城时各再 +1 宜居度（合计最多 +5）；拥有圣地的城市再得 +1 食物、+2 信仰、+1 文化、+2 住房、+1 宜居度。首都每回合额外 +1 信仰、+2 食物、+2 产能、+3 金币，圣地建造速度 +50%。圣地每与一处农场相邻再得 +1 信仰。产能不直接发放，由「勤则不匮」按圣地相邻值转化。同时获得披荆斩棘、江河淮济、勤则不匮、筚路蓝缕、物勒工名、驰道通都、法令一统七项能力。另附帝国规模：疆域愈广、人丁愈蕃，则每丁所出之智愈薄——自古典时代始，所有城市科研 −10%，人口十以上的大城再 −12%（累计 −22%），人口十六以上的巨型城再 −8%（累计 −30%）；远古时代不征此税。使科技不再随人口等比膨胀，人口越多抑制越重。</Text>
     </Replace>
 
     <Replace Tag="LOC_TRAIT_NHS_MR_NAME" Language="zh_Hans_CN">

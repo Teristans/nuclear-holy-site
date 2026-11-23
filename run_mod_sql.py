@@ -375,6 +375,11 @@ def verify(conn):
          "YieldType", "YIELD_PRODUCTION"),
         ("NHS_CAPITAL_PROD", "MODIFIER_PLAYER_CAPITAL_CITY_ADJUST_CITY_YIELD_CHANGE",
          "Amount", "2"),
+        # v48：前期金币旋钮。与上面两条同 ModifierType，只换 YieldType。
+        ("NHS_CAPITAL_GOLD", "MODIFIER_PLAYER_CAPITAL_CITY_ADJUST_CITY_YIELD_CHANGE",
+         "YieldType", "YIELD_GOLD"),
+        ("NHS_CAPITAL_GOLD", "MODIFIER_PLAYER_CAPITAL_CITY_ADJUST_CITY_YIELD_CHANGE",
+         "Amount", "3"),
     ]
     for mid, mtype, arg, expect in _tune:
         got_t = q1(conn, "SELECT ModifierType FROM Modifiers WHERE ModifierId=?", (mid,))
@@ -385,7 +390,7 @@ def verify(conn):
                 "[平衡] %s.%s = %s，期望 %s（参数缺失时引擎按默认值走，等于没写）"
                 % (mid, arg, got_v, expect))
 
-    for mid in ("NHS_HOLY_SITE_BUILD_FAST", "NHS_CAPITAL_FOOD", "NHS_CAPITAL_PROD"):
+    for mid in ("NHS_HOLY_SITE_BUILD_FAST", "NHS_CAPITAL_FOOD", "NHS_CAPITAL_PROD", "NHS_CAPITAL_GOLD"):
         req = q1(conn, "SELECT OwnerRequirementSetId FROM Modifiers WHERE ModifierId=?", (mid,))
         assert_(req == "PLAYER_IS_HUMAN", "[平衡] %s 挂 PLAYER_IS_HUMAN" % mid,
                 "[平衡] %s 的门槛是 %s，AI 会吃到" % (mid, req))
