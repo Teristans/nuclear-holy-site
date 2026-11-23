@@ -192,7 +192,17 @@ def main():
     print("\n[✓] 已安装 %d 个文件到：\n    %s" % (len(src_files), dest))
     print("[✓] 逐字节校验通过（sha256 全一致）")
     print()
-    print("下一步：启动游戏 → 额外内容 → 确认「皇帝之威 …（v46）」为启用状态 → 新开一局。")
+    # 版本号从源 modinfo 现读，避免提示文本与 modinfo 脱节（v46 时就是硬编码导致的过期提示）
+    _ver = "?"
+    try:
+        import re as _re
+        _mi = open(os.path.join(SRC, "NuclearHolySite.modinfo"), encoding="utf-8").read(2000)
+        _m = _re.search(r'version="(\d+)"', _mi)
+        if _m:
+            _ver = "v" + _m.group(1)
+    except Exception:
+        pass
+    print("下一步：启动游戏 → 额外内容 → 确认「皇帝之威 …（%s）」为启用状态 → 新开一局。" % _ver)
     print("注意：改的是 SQL 层时，老存档不会追溯生效（Civ6 在建局那一刻固化 modifier 集合）。")
     return 0
 

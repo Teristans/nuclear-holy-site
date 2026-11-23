@@ -1,5 +1,5 @@
 -- ============================================================================
--- 皇帝之威 · 帝国规模层 (nhs_18_tech_scaling.sql)  v7.46
+-- 皇帝之威 · 帝国规模层 (nhs_18_tech_scaling.sql)  v7.47
 --
 -- ############################################################################
 -- ##  ★ 先读这一段：v37 / v38 / v40 三轮「零效果」的真实原因已查明，
@@ -62,12 +62,33 @@
 --   加算类固定值），那条不受本层改动影响，继续照旧生效。
 --
 -- ============================================================================
--- 【三档设计 —— 人口越多，扣得越狠】
+-- 【三档设计 —— 人口越多，扣得越狠；远古时代整层不启动】
 --
---     档位            门槛            本档 Amount   累计
---     ① 规模税       所有城市          −10%        −10%
---     ② 大城档       城市人口 ≥10      再 −12%     −22%
---     ③ 巨型城档     城市人口 ≥16      再 −8%      −30%
+--     档位            门槛            本档 Amount   累计      生效条件
+--     ① 规模税       所有城市          −10%        −10%      人类 且 ≥ 古典时代
+--     ② 大城档       城市人口 ≥10      再 −12%     −22%      同上
+--     ③ 巨型城档     城市人口 ≥16      再 −8%      −30%      同上
+--
+--   ★ v47 新增：三档统一加「玩家自己已进入古典时代」门槛
+--     （REQUIREMENT_PLAYER_ERA_AT_LEAST + EraType = ERA_CLASSICAL），
+--     远古时代整层豁免，一分不扣。
+--
+--   为什么远古要豁免（这条是设计意图，不是补偿）：
+--     远古是人类最脆弱的阶段——神级 AI 自带约 +40%~+50% 科研加成（实测 t82 人类
+--     只有最强 AI 的 60%），此时再补一刀 −10% 属于「在玩家最弱的时候加税」。
+--     而且远古期总共只有 1~2 座城、总科研 2~5/回合，−10% 的绝对量看起来小
+--     （0.2~0.5 科研/回合），但远古科技本身只要 25~50 点，累计 100 回合下来
+--     相当于 1~2 个关键远古科技（畜牧、陶器）的进度差，开局手感差别明显。
+--     规模税的本意是「帝国成型后的承载力成本」，而远古还不算帝国。
+--
+--   为什么用 PlayerEra 而不是 GameEra：
+--     GameEra 是全场最先进的时代——只要任何一个 AI 进了古典，人类哪怕还在远古
+--     也要开始交税，那正好与「前期不削弱人类」相反。PlayerEra 判的是人类自己，
+--     玩家进入古典那一刻才开始征税，语义与设计一致。
+--
+--   注意这不是「降低难度」：它只是不在最弱阶段补刀。人类 vs AI 的比值在远古期
+--   仍然只有约 0.66，因为差距的主因是难度加成，不是这 10%。想改观感要动的是
+--   难度设置，不是这一层。
 --
 --   为什么门槛是 10 / 16：
 --     10 是原版对「大城」的通用口径（STADIUM_10 分界、永乐人口门槛、体育场）。
@@ -116,6 +137,13 @@
 --     改档后倍数会偏，因为它是按当前城数与人口结构算的，只作量级参考。）
 --   改完必须：完全退出游戏进程 → 重启 → **新开一局**（老存档不追溯，见文件头）。
 --
+--   ★ v47 起这三个数字只作用于「古典及以后」。远古时代恒为 0，改它们不影响远古。
+--     想让远古也吃折扣（回到 v46 的行为）：把三条 Modifier 的 OwnerRequirementSetId
+--     从 'NHS_REQS_HUMAN_POST_ANCIENT' 改回 'PLAYER_IS_HUMAN' 即可，
+--     1b 节的两条 INSERT 留着不影响（没人引用）。改完同样要重启进程 + 新开一局。
+--     想换门槛时代：只改 NHS_REQ_PLAYER_POST_ANCIENT 的 EraType
+--     （合法值 ERA_ANCIENT / ERA_CLASSICAL / ERA_MEDIEVAL / ERA_RENAISSANCE …）。
+--
 -- 【为什么不动文化与产能】
 --   同一份 t300 数据：文化 2.54 倍（每人口 0.46 倍，低于 AI），
 --   产能 4.38 倍但每人口 0.79 倍（也低于 AI）。两者都不是乘数超模，
@@ -147,9 +175,52 @@ INSERT OR IGNORE INTO RequirementSetRequirements (RequirementSetId, RequirementI
   ('NHS_REQS_CITY_POP_16', 'NHS_REQ_CITY_POP_16');
 
 -- ---------------------------------------------------------------------------
--- 2. 规模税：所有城市科研 −10%
---    OwnerRequirementSetId = PLAYER_IS_HUMAN → 只对人类秦始皇生效，
---    与本 mod 其余各层同一口径。AI 拿不到，科研节奏一点不变。
+-- 1b. 时代门槛（v47）：玩家自己已进入古典时代，远古时代整层豁免
+--
+--     机制出处（全部查自 Cache/DebugGameplay.sqlite，2026-11-23）：
+--       RequirementType : REQUIREMENT_PLAYER_ERA_AT_LEAST
+--       参数            : EraType = ERA_CLASSICAL
+--       原版同类型用例  : REQUIRES_PLAYER_IS_INDUSTRIAL_ERA（EraType=ERA_INDUSTRIAL，
+--                         Inverse=0），被城邦奥克兰的特性
+--                         MINOR_CIV_AUCKLAND_SHALLOW_WATER_PRODUCTION_BONUS_INDUSTRIAL 使用
+--                         → 证明该 RequirementType 在引擎里确实会被评估
+--
+--     组合 Set 的原版先例（结构与本文完全同构）：
+--       PLAYER_HAS_GOLDEN_AGE_ATOMIC = TEST_ALL {
+--           REQUIRES_ERA_IS_ATOMIC,            ← 时代判定
+--           REQUIRES_PLAYER_HAS_GOLDEN_AGE }   ← 另一个玩家维度判定
+--       挂在 3 个 Modifier 的 **OwnerRequirementSetId** 上
+--       （COMMEMORATION_AERONAUTICAL_GA_* → MODIFIER_PLAYER_GRANT_SPECIFIC_TECH_BOOST）
+--       → 证明「时代判定 + 另一条玩家判定」可以组成 TEST_ALL Set 并挂 Owner 阶段。
+--       本文就是把第一条换成 PlayerEra（更精确）、第二条换成 REQUIRES_PLAYER_IS_HUMAN。
+--
+--     ⚠ 用 PlayerEra 不用 GameEra：GameEra 是全场最先进的时代，只要有一个 AI 进了
+--       古典，还在远古的人类也要开始交税——与「前期不削弱人类」正好相反。
+--
+--     ⚠ 这条 Requirement 组合在实机上**尚未验证**（机制有先例，但同一组合没有原样跑过）。
+--       验收方法见文件末尾「实机验收」第 6 条。
+-- ---------------------------------------------------------------------------
+INSERT OR IGNORE INTO Requirements (RequirementId, RequirementType) VALUES
+  ('NHS_REQ_PLAYER_POST_ANCIENT', 'REQUIREMENT_PLAYER_ERA_AT_LEAST');
+
+INSERT OR IGNORE INTO RequirementArguments (RequirementId, Name, Value) VALUES
+  ('NHS_REQ_PLAYER_POST_ANCIENT', 'EraType', 'ERA_CLASSICAL');
+
+INSERT OR IGNORE INTO RequirementSets (RequirementSetId, RequirementSetType) VALUES
+  ('NHS_REQS_HUMAN_POST_ANCIENT', 'REQUIREMENTSET_TEST_ALL');
+
+INSERT OR IGNORE INTO RequirementSetRequirements (RequirementSetId, RequirementId) VALUES
+  ('NHS_REQS_HUMAN_POST_ANCIENT', 'REQUIRES_PLAYER_IS_HUMAN');
+
+INSERT OR IGNORE INTO RequirementSetRequirements (RequirementSetId, RequirementId) VALUES
+  ('NHS_REQS_HUMAN_POST_ANCIENT', 'NHS_REQ_PLAYER_POST_ANCIENT');
+
+-- ---------------------------------------------------------------------------
+-- 2. 规模税：所有城市科研 −10%（人类 且 ≥ 古典时代）
+--    OwnerRequirementSetId = NHS_REQS_HUMAN_POST_ANCIENT
+--      = TEST_ALL{ REQUIRES_PLAYER_IS_HUMAN, NHS_REQ_PLAYER_POST_ANCIENT }
+--      两个条件缺一不可：只对人类秦始皇生效（AI 拿不到，科研节奏一点不变），
+--      且人类自己进入古典时代后才开始征税（v47，远古豁免）。
 --    SubjectRequirementSetId 留空 = 不收窄，所有城市都吃（这正是「规模税」的本意）。
 --
 --    为什么敢用 OR IGNORE（旧行不会残留）：
@@ -157,9 +228,10 @@ INSERT OR IGNORE INTO RequirementSetRequirements (RequirementSetId, RequirementI
 --      mod 写入的行不会跨进程保留；而同一进程内 UpdateDatabase 只执行一次。
 --      不重启进程时 SQL 根本不会重跑，所以不存在「OR IGNORE 跳过、留着旧类型」的场景。
 --      若哪天引擎改成增量更新，这里要换成先 DELETE 再 INSERT。
+--      （v47 把 Owner 从 PLAYER_IS_HUMAN 换成组合 Set 也依赖这条：必须重启进程。）
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO Modifiers (ModifierId, ModifierType, OwnerRequirementSetId) VALUES
-  ('NHS_TECH_SCALE_L1', 'MODIFIER_PLAYER_CITIES_ADJUST_CITY_YIELD_MODIFIER', 'PLAYER_IS_HUMAN');
+  ('NHS_TECH_SCALE_L1', 'MODIFIER_PLAYER_CITIES_ADJUST_CITY_YIELD_MODIFIER', 'NHS_REQS_HUMAN_POST_ANCIENT');
 
 INSERT OR IGNORE INTO ModifierArguments (ModifierId, Name, Value) VALUES
   ('NHS_TECH_SCALE_L1', 'YieldType', 'YIELD_SCIENCE');
@@ -170,13 +242,13 @@ INSERT OR IGNORE INTO TraitModifiers (TraitType, ModifierId) VALUES
   ('TRAIT_NHS_NUCLEAR_HOLY_SITE', 'NHS_TECH_SCALE_L1');
 
 -- ---------------------------------------------------------------------------
--- 3. 大城档：人口 ≥10 的城市再 −12%
---    Owner 判「这个玩家是不是人类」，Subject 判「这座城市够不够大」，
+-- 3. 大城档：人口 ≥10 的城市再 −12%（同为人类 且 ≥ 古典时代）
+--    Owner 判「这个玩家是不是人类 + 是否已过远古」，Subject 判「这座城市够不够大」，
 --    两者在不同收集阶段评估，不冲突（原版 DECENTRALIZATION_HIGHPOP_GOLD
---    就是「同一 modifier + 人口门槛 Subject」的形状）。
+--    就是「同一 modifier + 人口门槛 Subject」的形状；时代 + 玩家判定的组合见 1b）。
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO Modifiers (ModifierId, ModifierType, OwnerRequirementSetId, SubjectRequirementSetId) VALUES
-  ('NHS_TECH_SCALE_L2', 'MODIFIER_PLAYER_CITIES_ADJUST_CITY_YIELD_MODIFIER', 'PLAYER_IS_HUMAN', 'NHS_REQS_CITY_POP_10');
+  ('NHS_TECH_SCALE_L2', 'MODIFIER_PLAYER_CITIES_ADJUST_CITY_YIELD_MODIFIER', 'NHS_REQS_HUMAN_POST_ANCIENT', 'NHS_REQS_CITY_POP_10');
 
 INSERT OR IGNORE INTO ModifierArguments (ModifierId, Name, Value) VALUES
   ('NHS_TECH_SCALE_L2', 'YieldType', 'YIELD_SCIENCE');
@@ -187,13 +259,13 @@ INSERT OR IGNORE INTO TraitModifiers (TraitType, ModifierId) VALUES
   ('TRAIT_NHS_NUCLEAR_HOLY_SITE', 'NHS_TECH_SCALE_L2');
 
 -- ---------------------------------------------------------------------------
--- 4. 巨型城档：人口 ≥16 的城市再 −8%（三档累计 −30%）
+-- 4. 巨型城档：人口 ≥16 的城市再 −8%（三档累计 −30%，同为人类 且 ≥ 古典时代）
 --    这一档是「边际递增」的来源：跨过 16 之后斜率再抬一档，
 --    防止「只要到 10 就封顶」——那样 10 人口和 30 人口吃一样的折扣，
 --    「人口越多惩罚越多」就只对了一半。
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO Modifiers (ModifierId, ModifierType, OwnerRequirementSetId, SubjectRequirementSetId) VALUES
-  ('NHS_TECH_SCALE_L3', 'MODIFIER_PLAYER_CITIES_ADJUST_CITY_YIELD_MODIFIER', 'PLAYER_IS_HUMAN', 'NHS_REQS_CITY_POP_16');
+  ('NHS_TECH_SCALE_L3', 'MODIFIER_PLAYER_CITIES_ADJUST_CITY_YIELD_MODIFIER', 'NHS_REQS_HUMAN_POST_ANCIENT', 'NHS_REQS_CITY_POP_16');
 
 INSERT OR IGNORE INTO ModifierArguments (ModifierId, Name, Value) VALUES
   ('NHS_TECH_SCALE_L3', 'YieldType', 'YIELD_SCIENCE');
@@ -253,4 +325,16 @@ INSERT OR IGNORE INTO TraitModifiers (TraitType, ModifierId) VALUES
 --   4. 顺带确认 AI 没受影响：AI 城市科研不应出现任何负向修正。
 --   5. `NHS_SCRIPT` 动作块**暂时保留**：机制虽已验收，平衡目标还没定，
 --      中期（t150 之后）仍要靠它看人类/AI 科研总量。平衡定稿后再删。
+--
+--   6. ★ v47 新增项待验：远古时代整层不生效。**这一条只有一种验法**——
+--      新开一局、**什么都不做**（不研究、不建城、直接过回合），在远古时代看首城科研：
+--        人类的城 / 城邦单城均值  ≈ 1.00（未被扣）
+--        一旦玩家进入古典时代（时代推进条填满），同一座城的比值应跳到 ≈ 0.90
+--      两个读数都要取，只取一个无法区分「门控生效」与「整层失效」：
+--        · 远古 1.00 且 古典 0.90  → 门控正确 ✓
+--        · 远古 0.90              → 时代 Requirement 没起作用（挂错了上下文），要改成
+--                                    REQUIREMENT_GAME_ERA_ATLEAST_EXPANSION 再试
+--        · 远古 1.00 且 古典 1.00  → 整层没挂上（多半没重启进程 / 不是新局）
+--      注意：进入古典时代没有读档那么容易触发，建议用修改器或直接研究到古典；
+--      也可以反过来验「远古 0.90 不存在」——先在远古看一次，就该是 1.00。
 -- ============================================================================

@@ -1614,9 +1614,10 @@ else:
                 err("[规模] %s 的修饰器为 %s；应为 %s。v40 的加算固定值"
                     "（NHS_MOD_CITY_YIELD）是误判时的过渡写法，不要再退回"
                     % (_tag, _t, _YMOD))
-            if _own != "PLAYER_IS_HUMAN":
-                err("[规模] %s 的 Owner 门槛为 %s；必须 PLAYER_IS_HUMAN，"
-                    "否则 AI 也吃科研惩罚" % (_tag, _own))
+            if _own != "NHS_REQS_HUMAN_POST_ANCIENT":
+                err("[规模] %s 的 Owner 门槛为 %s；应为 NHS_REQS_HUMAN_POST_ANCIENT"
+                    "（人类 且 ≥古典时代）。改回 PLAYER_IS_HUMAN 会让远古期也征税；"
+                    "改成别的 Set 会让 AI 也吃惩罚" % (_tag, _own))
             if _got_sub != _sub:
                 err("[规模] %s 的 Subject 门槛为 %s；应为 %s。门槛错位不会报错，"
                     "只会让分档点落在错误的人口数上"
@@ -1665,6 +1666,29 @@ else:
             err("[规模] NHS_TECH_SCALE_%s 未写入 TraitModifiers；行在库里但没有玩家拿得到，"
                 "等于整档失效" % _tag)
 
+    # ---- v47 时代门控：远古豁免的全部实现 ----
+    #   三档共用一个组合 Owner Set（人类 且 ≥古典）。这里逐条静态核对，
+    #   因为任何一处写错都不报错：少一个成员、EraType 写错、Set 名打错，
+    #   表现都是「整层失效」或「远古也扣」，只有实测才看得出来。
+    if re.search(r"'NHS_REQ_PLAYER_POST_ANCIENT'\s*,\s*'REQUIREMENT_PLAYER_ERA_AT_LEAST'", _t18):
+        info("[规模] 时代门槛类型 = REQUIREMENT_PLAYER_ERA_AT_LEAST（判玩家自己的时代，非全场）")
+    else:
+        err("[规模] 缺 NHS_REQ_PLAYER_POST_ANCIENT 的 Requirements 声明，"
+            "或类型不是 REQUIREMENT_PLAYER_ERA_AT_LEAST；远古将不再豁免")
+
+    if re.search(r"'NHS_REQ_PLAYER_POST_ANCIENT'\s*,\s*'EraType'\s*,\s*'ERA_CLASSICAL'", _t18):
+        info("[规模] 豁免边界 = 玩家进入古典时代后才征税（远古 0%）")
+    else:
+        err("[规模] NHS_REQ_PLAYER_POST_ANCIENT 的 EraType 不是 ERA_CLASSICAL；"
+            "豁免边界会漂移（写成 ERA_ANCIENT 等于不豁免，写更晚的时代则豁免变长）")
+
+    for _need in ("REQUIRES_PLAYER_IS_HUMAN", "NHS_REQ_PLAYER_POST_ANCIENT"):
+        if re.search(r"'NHS_REQS_HUMAN_POST_ANCIENT'\s*,\s*'%s'" % _need, _t18):
+            info("[规模] 时代门控 Set 含成员 %s" % _need)
+        else:
+            err("[规模] 时代门控 Set 缺成员 %s；两个成员缺一个都是静默失效"
+                "（少 HUMAN → AI 也吃；少 ERA → 远古也扣）" % _need)
+
     # v37 的旧 ID 必须彻底消失：留着是死代码，后来者会以为它在起作用。
     if re.search(r"NHS_TECH_POP_COST", _t18):
         err("[规模] 文件里仍残留 v37 的 NHS_TECH_POP_COST_* 字样；那个写法实机已证明无效，"
@@ -1693,7 +1717,11 @@ else:
                     ("SELECT COUNT(*) FROM Requirements WHERE RequirementType=?", "要求类型",
                      "REQUIREMENT_CITY_HAS_X_POPULATION"),
                     ("SELECT COUNT(*) FROM RequirementSets WHERE RequirementSetId=?", "需求集",
-                     "PLAYER_IS_HUMAN")):
+                     "PLAYER_IS_HUMAN"),
+                    ("SELECT COUNT(*) FROM Requirements WHERE RequirementType=?", "时代要求类型",
+                     "REQUIREMENT_PLAYER_ERA_AT_LEAST"),
+                    ("SELECT COUNT(*) FROM Eras WHERE EraType=?", "时代常量",
+                     "ERA_CLASSICAL")):
                 _n = _c.execute(_sql, (_val,)).fetchone()[0]
                 if _n:
                     info("[规模] 游戏库里存在%s：%s" % (_label, _val))

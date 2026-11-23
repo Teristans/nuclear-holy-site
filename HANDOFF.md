@@ -668,6 +668,56 @@ python lua_check.py --all-mods      # 全部已启用 mod 的 .lua
   **新局的预期**：前 3 回合人类首城 / 城邦基准 ≈ **0.90**（−10%）；
   人口 10 时 ≈ **0.78**（−22%）；人口 16 时 ≈ **0.70**（−30%）。
 
+- **v7.47a（远古时代豁免：三档统一加「玩家已进入古典时代」门槛，2026-11-23）**：
+  用户诉求原文：「回到平衡性角度，我希望前期（远古时代）不要削弱人类玩家」。
+  **动机（设计修正，不是补偿）**：远古是人类最弱的阶段——神级 AI 自带约 +40%~+50% 科研加成，
+  实测 t82 人类只有最强 AI 的 60%；此时再补 −10% 等于在玩家最弱时加税。
+  量级也够看：远古总科研 2~5/回合，−10% 的绝对差 0.2~0.5，但远古科技只要 25~50 点，
+  累计 100 回合是 1~2 个关键远古科技（畜牧、陶器）的进度差。
+  规模税的本意是「帝国成型后的承载力成本」，而远古还不算帝国。
+
+  **机制（查库 + 原版先例，不是猜的）**：
+  · `REQUIREMENT_PLAYER_ERA_AT_LEAST` + `EraType=ERA_CLASSICAL`。
+    原版同类型用例：`REQUIRES_PLAYER_IS_INDUSTRIAL_ERA`（Industrial），
+    被城邦奥克兰的 `MINOR_CIV_AUCKLAND_SHALLOW_WATER_PRODUCTION_BONUS_INDUSTRIAL` 使用
+    → 证明该 RequirementType 在引擎里确实会被评估。
+  · 组合 Set 的原版先例（与本次完全同构）：
+    `PLAYER_HAS_GOLDEN_AGE_ATOMIC` = TEST_ALL{`REQUIRES_ERA_IS_ATOMIC`,
+    `REQUIRES_PLAYER_HAS_GOLDEN_AGE`}，挂在 3 个 Modifier 的 **OwnerRequirementSetId** 上
+    （`COMMEMORATION_AERONAUTICAL_GA_*` → `MODIFIER_PLAYER_GRANT_SPECIFIC_TECH_BOOST`）
+    → 证明「时代判定 + 另一条玩家维度判定」可组成 TEST_ALL Set 并挂 Owner 阶段。
+  · **用 PlayerEra 不用 GameEra**：GameEra 是全场最先进的时代，任一 AI 先进古典就会开始
+    对仍处远古的人类征税，与诉求相反。库里 GAME_ERA 系列用例更多，但语义不对。
+
+  **改动范围（6 处，缺一处就「改了等于没改」）**：
+  ① `nhs_18` 新增 1b 节：`NHS_REQ_PLAYER_POST_ANCIENT`（REQUIREMENT_PLAYER_ERA_AT_LEAST
+     + ERA_CLASSICAL）+ `NHS_REQS_HUMAN_POST_ANCIENT`（TEST_ALL，两个成员）；
+     三条 Modifier 的 `OwnerRequirementSetId`：`PLAYER_IS_HUMAN` → **`NHS_REQS_HUMAN_POST_ANCIENT`**；
+     **Amount 一个都没动**（仍 −10/−12/−8，累计 −30%）；文件头加「为什么远古要豁免」一节；
+     末尾验收节加第 6 条（远古 1.00 + 古典 0.90 两个读数都要取）。
+  ② `run_mod_sql.py`：`[规模]` 节把「三条 Owner 必须是 PLAYER_IS_HUMAN」换成钉死新 Set 名，
+     并追加两条断言（Set 成员集合、时代门槛类型与 EraType）；
+  ③ `verify_mod.py`：`_TIERS` 循环的 Owner 断言同步；新增 v47 时代门控静态块（3 条）；
+     库核对追加 `REQUIREMENT_PLAYER_ERA_AT_LEAST` 与 `ERA_CLASSICAL` 两条存在性；
+  ④ `nhs_text.xml`：注释段 + 中英文长描述（「自古典时代始…远古不征此税」）；
+  ⑤ `modinfo`：version 46→47、标题、描述、动作注释；
+  ⑥ `install.py`：收尾提示的版本号改为**从 modinfo 现读**（原本硬编码 v46，必然过期）。
+
+  **反向测试 5/5 全抓**（`reverse_test_v47.py`，跑完自动还原并校验 sha256）：
+  EraType 改 ERA_ANCIENT → `✗ 豁免边界会漂移` + `✗ 时代门槛不对`；
+  删 Set 的时代成员 → `✗ 缺成员 NHS_REQ_PLAYER_POST_ANCIENT` + `✗ Owner Set 成员不对`；
+  删 Set 的人类成员 → `✗ 缺成员 REQUIRES_PLAYER_IS_HUMAN`；
+  L1 改回 PLAYER_IS_HUMAN → `✗ 的 Owner 门槛为 PLAYER_IS_HUMAN`；
+  类型名少一个下划线 → `✗ 类型不是 REQUIREMENT_PLAYER_ERA_AT_LEAST` + `✗ 游戏库里找不到`。
+
+  `run_mod_sql` **204 ✓**、`verify` **248 项 0 错 3 ⚠**、`lua_check` 通过、23 文件逐字节一致、
+  `version="47"`，安装目录四个改动文件 sha256 一致。
+  **⚠ 必须「完全退出进程 → 重启 → 新开一局」**（既改 SQL 又改挂载口径）。
+  **验收判据（两个读数都要）**：远古期 人类首城 / 城邦均值 ≈ **1.00**；进入古典后 ≈ **0.90**。
+  只有前一个读数无法区分「门控生效」与「整层没挂上」。三种失败形态：
+    远古 0.90 → 时代 Requirement 没起作用（换成 `REQUIREMENT_GAME_ERA_ATLEAST_EXPANSION` 再试）；
+    远古 1.00 且古典 1.00 → 整层没挂上（没重启进程 / 不是新局）。
+
 
 
 1. **直接拷整个工作目录** → 14 MB 里一半是 `db/*.sqlite` 中间产物。用 zip，别用 U 盘整目录拖。

@@ -1091,6 +1091,8 @@ def verify(conn):
     _tiers = {"NHS_TECH_SCALE_L1": (None, -10),
               "NHS_TECH_SCALE_L2": ("NHS_REQS_CITY_POP_10", -12),
               "NHS_TECH_SCALE_L3": ("NHS_REQS_CITY_POP_16", -8)}
+    #    v47 起三档统一挂组合 Owner 门槛 NHS_REQS_HUMAN_POST_ANCIENT（人类 且 ≥古典），
+    #    远古时代整层豁免；Amount 数值本身没动（仍是 −10 / −12 / −8，累计 −30）。
     _CUM = 30   # 巨型城累计折扣（−10 −12 −8，v46 从 −53 调轻，见 nhs_18 文件头）
     _tech = {}
     for _mid in _tiers:
@@ -1120,10 +1122,36 @@ def verify(conn):
                 "[规模] DynamicModifiers 不对：%s；应为 (COLLECTION_PLAYER_CITIES, %s)。"
                 "换 effect 会让 Amount 的单位从「%%」变成「固定值」，数值静默错一个量级"
                 % (_dm, _YMOD_EFFECT))
-        assert_(all(r[1] == "PLAYER_IS_HUMAN" for r in _tech.values()),
-                "[规模] 三条 Owner 门槛均为 PLAYER_IS_HUMAN（AI 拿不到，科技节奏不受影响）",
-                "[规模] Owner 门槛不是 PLAYER_IS_HUMAN：%s；会让 AI 也吃惩罚"
-                % {k: v[1] for k, v in _tech.items()})
+        _OWNER = "NHS_REQS_HUMAN_POST_ANCIENT"
+        assert_(all(r[1] == _OWNER for r in _tech.values()),
+                "[规模] 三条 Owner 门槛均为 %s（人类 且 已过远古）" % _OWNER,
+                "[规模] Owner 门槛不是 %s：%s；会让远古期也征税，或让 AI 也吃惩罚"
+                % (_OWNER, {k: v[1] for k, v in _tech.items()}))
+
+        # v47 时代门控：远古豁免完全靠这条组合 Set，两个成员缺一个都**静默**失效——
+        #   少 REQUIRES_PLAYER_IS_HUMAN → AI 也吃（惩罚全图）
+        #   少 NHS_REQ_PLAYER_POST_ANCIENT → 远古也扣（等于退回 v46）
+        # 两者都不报错，只能查最终状态，所以在这里钉死。
+        _mem = set(x[0] for x in conn.execute(
+            "SELECT RequirementId FROM RequirementSetRequirements "
+            "WHERE RequirementSetId=?", (_OWNER,)).fetchall())
+        assert_(_mem == {"REQUIRES_PLAYER_IS_HUMAN", "NHS_REQ_PLAYER_POST_ANCIENT"},
+                "[规模] 时代门控 Set = TEST_ALL{ 人类, ≥古典时代 }",
+                "[规模] Owner Set 成员不对：%s；应为 {REQUIRES_PLAYER_IS_HUMAN, "
+                "NHS_REQ_PLAYER_POST_ANCIENT}。少 HUMAN 则 AI 也吃，"
+                "少 ERA 则远古也扣，两种都不报错" % sorted(_mem))
+
+        _era = conn.execute(
+            "SELECT r.RequirementType, a.Value FROM Requirements r "
+            "LEFT JOIN RequirementArguments a ON a.RequirementId=r.RequirementId "
+            "AND a.Name='EraType' WHERE r.RequirementId='NHS_REQ_PLAYER_POST_ANCIENT'"
+        ).fetchone()
+        assert_(_era == ("REQUIREMENT_PLAYER_ERA_AT_LEAST", "ERA_CLASSICAL"),
+                "[规模] 时代门槛 = REQUIREMENT_PLAYER_ERA_AT_LEAST + ERA_CLASSICAL"
+                "（判玩家自己的时代，不是全场时代）",
+                "[规模] 时代门槛不对：%s；换成 REQUIREMENT_GAME_ERA_* 会让"
+                "「AI 先进入古典」也触发征税，与「前期不削弱人类」相反；"
+                "换成别的 EraType 会挪动豁免边界" % (_era,))
 
         # 逐档核对 Subject 门槛。第 1 档必须为 None：挂了门槛就等于把小城
         # 排除在「规模税」之外，与「任何城市都有规模成本」的设计不符。
